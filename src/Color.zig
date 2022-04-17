@@ -4,47 +4,36 @@
 //
 // See LICENSE file for license details
 
+const std = @import("std");
 const builtin = @import("builtin");
 
-pub const Color = enum {
-    blue,
-    green,
-    white,
-    yellow,
+pub const Color = enum(u32) {
+    green = 32,
+    yellow = 33,
+    blue = 34,
+    white = 39,
 
     const Self = @This();
 
-    pub fn regular(self: Self, comptime str: []const u8) []const u8 {
-        switch (builtin.os.tag) {
-            .windows => return switch (self) {
-                .blue => str,
-                .green => str,
-                .white => str,
-                .yellow => str,
-            },
-            else => return switch (self) {
-                .blue => "\x1b[00;34m" ++ str ++ "\x1b[0m",
-                .green => "\x1b[00;32m" ++ str ++ "\x1b[0m",
-                .white => "\x1b[00;39m" ++ str ++ "\x1b[0m",
-                .yellow => "\x1b[00;33m" ++ str ++ "\x1b[0m",
-            },
+    pub fn regular(self: Self, comptime _str: []const u8) []const u8 {
+        if (builtin.os.tag != .windows) {
+            return std.fmt.comptimePrint("\x1b[00;{}m{s}\x1b[0m", .{
+                @enumToInt(self),
+                _str,
+            });
         }
+
+        return _str;
     }
 
-    pub fn bold(self: Self, comptime str: []const u8) []const u8 {
-        switch (builtin.os.tag) {
-            .windows => return switch (self) {
-                .blue => str,
-                .green => str,
-                .white => str,
-                .yellow => str,
-            },
-            else => return switch (self) {
-                .blue => "\x1b[01;34m" ++ str ++ "\x1b[0m",
-                .green => "\x1b[01;32m" ++ str ++ "\x1b[0m",
-                .white => "\x1b[01;39m" ++ str ++ "\x1b[0m",
-                .yellow => "\x1b[01;33m" ++ str ++ "\x1b[0m",
-            },
+    pub fn bold(self: Self, comptime _str: []const u8) []const u8 {
+        if (builtin.os.tag != .windows) {
+            return std.fmt.comptimePrint("\x1b[01;{}m{s}\x1b[0m", .{
+                @enumToInt(self),
+                _str,
+            });
         }
+
+        return _str;
     }
 };

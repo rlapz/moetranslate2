@@ -38,22 +38,26 @@ const Cmd = enum(u32) {
 var g_fba: *std.heap.FixedBufferAllocator = undefined;
 
 fn printHelp() void {
-    util.writeErrIgn(false, "" ++
-        "moetranslate2 - A beautiful and simple language translator\n\n" ++
-        "Usage: moetranslate2 [OPT] [SOURCE:TARGET] [TEXT]\n" ++
-        "       -b    Brief output\n" ++
-        "       -f    Full/detail output\n" ++
-        "       -r    Raw output (json)\n" ++
-        "       -d    Detect language\n" ++
-        "       -i    Interactive input mode\n" ++
-        "       -h    Show this help\n\n" ++
-        "Examples:\n" ++
-        "   Brief Mode      : moetranslate2 -b en:id \"Hello\"\n" ++
-        "   Full/detail Mode: moetranslate2 -f id:en \"Halo\"\n" ++
-        "   Auto Lang       : moetranslate2 -f auto:en \"こんにちは\"\n" ++
-        "   Detect Lang     : moetranslate2 -d \"你好\"\n" ++
-        "   Interactive     : moetranslate2 -i\n" ++
-        "                     moetranslate2 -i -f auto:en\n");
+    util.writeErrIgn(false,
+        \\moetranslate2 - A beautiful and simple language translator
+        \\
+        \\Usage: moetranslate2 [OPT] [SOURCE:TARGET] [TEXT]
+        \\       -b    Brief output
+        \\       -f    Full/detail output
+        \\       -r    Raw output (json)
+        \\       -d    Detect language
+        \\       -i    Interactive input mode
+        \\       -h    Show this help
+        \\
+        \\Examples:
+        \\   Brief Mode      : moetranslate2 -b en:id \"Hello\"
+        \\   Full/detail Mode: moetranslate2 -f id:en \"Halo\"
+        \\   Auto Lang       : moetranslate2 -f auto:en \"こんにちは\"
+        \\   Detect Lang     : moetranslate2 -d \"你好\"
+        \\   Interactive     : moetranslate2 -i
+        \\                     moetranslate2 -i -f auto:en
+        \\
+    );
 }
 
 fn printHelpIntr(moe: *Moetranslate) void {
