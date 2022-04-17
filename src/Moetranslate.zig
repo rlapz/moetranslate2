@@ -176,16 +176,8 @@ fn printDetail(self: *Self) void {
     const src_corr = jsn.items[7];
     if (src_corr == .Array and src_corr.Array.capacity > 0) {
         util.printOutIgn(true,
-            switch (config.color) {
-                true  => Color.yellow.regular("{s} \""),
-                false => "{s} \"",
-            } ++
-            "{s}" ++
-            switch (config.color) {
-                true  => Color.yellow.regular("\" ?"),
-                false => "\" ?",
-            } ++
-            "\n",
+             Color.yellow.regular("{s} \"") ++ "{s}" ++
+             Color.yellow.regular("\" ?")   ++ "\n",
             .{"> Did you mean:", src_corr.Array.items[1].String},
         );
     }
@@ -195,10 +187,7 @@ fn printDetail(self: *Self) void {
     if (src_spll == .String) {
         util.printOutIgn(true,
             "( " ++
-            switch (config.color) {
-                true  => "" ++ Color.yellow.regular("{s}"),
-                false => "{s}",
-            } ++
+            Color.yellow.regular("{s}") ++
             " )\n",
             .{src_spll.String},
         );
@@ -207,10 +196,7 @@ fn printDetail(self: *Self) void {
     // Source lang
     const src_lang = jsn.items[2];
     util.printOutIgn(true,
-        switch (config.color) {
-            true  => Color.green.regular("[ {s} ]") ++ ": {s}\n\n",
-            false => "[ {s} ]: {s}\n\n",
-        },
+         Color.green.regular("[ {s} ]") ++ ": {s}\n\n",
         .{ src_lang.String, Lang.getLangStr(src_lang.String) },
     );
 
@@ -221,22 +207,14 @@ fn printDetail(self: *Self) void {
     const trg_spll = splls.Array.items[2];
     if (trg_spll == .String) {
         util.printOutIgn(true,
-            "( " ++
-            switch (config.color) {
-                true  => "" ++ Color.yellow.regular("{s}"),
-                false => "{s}",
-            } ++
-            " )\n",
+            "( " ++ Color.yellow.regular("{s}") ++ " )\n",
             .{trg_spll.String},
         );
     }
 
     // Target lang
     util.printOutIgn(true,
-        switch (config.color) {
-            true  => Color.green.regular("[ {s} ]") ++ ": {s}\n",
-            false => "[ {s} ]: {s}\n",
-        },
+         Color.green.regular("[ {s} ]") ++ ": {s}\n",
         .{ self.trg_lang.key, Lang.getLangStr(self.trg_lang.key) },
     );
 
@@ -253,19 +231,12 @@ fn printDetail(self: *Self) void {
                 // I think for the sake of beauty we should give a label,
                 // instead of printing an empty string.
                 util.writeOutIgn(true,
-                    "\n" ++
-                    switch (config.color) {
-                        true  => Color.blue.bold("[ + ]"),
-                        false => "[ + ]",
-                    }
+                    "\n" ++ Color.blue.bold("[ + ]"),
                 );
             } else {
                 const va = v.Array.items[0].String;
                 util.printOutIgn(true,
-                    switch (config.color) {
-                        true  => "\n" ++ Color.blue.bold("[ {c}{s} ]"),
-                        false => "\n[ {c}{s} ]",
-                    },
+                     "\n" ++ Color.blue.bold("[ {c}{s} ]"),
                     .{ std.ascii.toUpper(va[0]), va[1..] },
                 );
             }
@@ -278,13 +249,8 @@ fn printDetail(self: *Self) void {
 
                 const vaa = vi.Array.items[0].String;
                 util.printOutIgn(true,
-                    "\n" ++
-                    switch (config.color) {
-                        true  => Color.white.bold("{}. {c}{s}") ++
-                                 "\n   " ++
-                                 Color.yellow.regular("-> "),
-                        false => "{}. {c}{s}:\n   -> ",
-                    },
+                    "\n" ++ Color.white.bold("{}. {c}{s}") ++
+                    "\n   " ++ Color.yellow.regular("-> "),
                     .{ ii + 1, std.ascii.toUpper(vaa[0]), vaa[1..] },
                 );
 
@@ -312,20 +278,12 @@ fn printDetail(self: *Self) void {
             if (v.Array.items[0].String.len == 0) {
                 // No label
                 util.writeOutIgn(true,
-                    "\n" ++
-                    switch (config.color) {
-                        true  => Color.yellow.bold("[ + ]"),
-                        false => "[ + ]",
-                    }
+                    "\n" ++ Color.yellow.bold("[ + ]"),
                 );
             } else {
                 const va = v.Array.items[0].String;
                 util.printOutIgn(true,
-                    "\n" ++
-                    switch (config.color) {
-                        true  => Color.yellow.bold("[ {c}{s} ]"),
-                        false => "[ {c}{s} ]",
-                    },
+                    "\n" ++ Color.yellow.bold("[ {c}{s} ]"),
                     .{ std.ascii.toUpper(va[0]), va[1..] },
                 );
             }
@@ -337,11 +295,7 @@ fn printDetail(self: *Self) void {
 
                 const vaa = vi.Array.items[0].String;
                 util.printOutIgn(true,
-                    "\n" ++
-                    switch (config.color) {
-                        true  => Color.white.bold("{}. {c}{s}"),
-                        false => "{}. {c}{s}",
-                    },
+                    "\n" ++ Color.white.bold("{}. {c}{s}"),
                     .{ ii + 1, std.ascii.toUpper(vaa[0]), vaa[1..] },
                 );
 
@@ -352,10 +306,7 @@ fn printDetail(self: *Self) void {
 
                         if (ss == .Array and ss.Array.items[0] == .String) {
                             util.printOutIgn(true,
-                                switch (config.color) {
-                                    true  => Color.green.regular(" [ {s} ] ") ++ "",
-                                    false => " [ {s} ] ",
-                                },
+                                Color.green.regular(" [ {s} ] ") ++ "",
                                 .{ss.Array.items[0].String}
                             );
                         }
@@ -366,11 +317,7 @@ fn printDetail(self: *Self) void {
                     const def_v = vi.Array.items[vi.Array.items.len - 1];
                     if (def_v == .String) {
                         util.printOutIgn(true,
-                            "\n" ++
-                            switch (config.color) {
-                                true  => Color.yellow.regular("   ->") ++ " {c}{s}",
-                                false => "   -> {c}{s}",
-                            },
+                            "\n" ++ Color.yellow.regular("   ->") ++ " {c}{s}",
                             .{
                                 std.ascii.toUpper(def_v.String[0]),
                                 def_v.String[1..]
@@ -401,11 +348,7 @@ fn printDetail(self: *Self) void {
 
                 const vex_res = util.skipHtmlTags(_buffer[0..vex.len]);
                 util.printOutIgn(true,
-                    "{}. " ++
-                    switch (config.color) {
-                        true  => "" ++ Color.yellow.regular("{c}{s}"),
-                        false => "{c}{s}",
-                    } ++ "\n",
+                    "{}. " ++ Color.yellow.regular("{c}{s}") ++ "\n",
                     .{ ii + 1, std.ascii.toUpper(vex_res[0]), vex_res[1..] },
                 );
             }
