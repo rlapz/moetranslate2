@@ -5,6 +5,8 @@
 // See LICENSE file for license details
 
 const std = @import("std");
+const dprint = std.debug.print;
+
 const Error = @import("Error.zig").Error;
 const Lang = @import("Lang.zig");
 
@@ -114,7 +116,6 @@ pub fn skipHtmlTags(str: []u8) []const u8 {
     return str[0..len];
 }
 
-const dprint = std.debug.print;
 const expect = std.testing.expect;
 
 test "util" {

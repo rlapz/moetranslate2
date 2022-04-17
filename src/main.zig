@@ -19,13 +19,12 @@ const Color = @import("Color.zig").Color;
 const getopt = @import("lib/getopt.zig");
 
 const c = @cImport({
-    @cInclude("stdio.h");
     @cInclude("stdlib.h");
     @cInclude("locale.h");
     @cInclude("editline/readline.h");
 });
 
-const Cmd = enum(u8) {
+const Cmd = enum(u32) {
     quit,
     info,
     help,
@@ -39,25 +38,29 @@ const Cmd = enum(u8) {
 var g_fba: *std.heap.FixedBufferAllocator = undefined;
 
 fn printHelp() void {
-    util.writeErrIgn(false, "" ++
-        "moetranslate2 - A beautiful and simple language translator\n\n" ++
-        "Usage: moetranslate2 [OPT] [SOURCE:TARGET] [TEXT]\n" ++
-        "       -b    Brief output\n" ++
-        "       -f    Full/detail output\n" ++
-        "       -r    Raw output (json)\n" ++
-        "       -d    Detect language\n" ++
-        "       -i    Interactive input mode\n" ++
-        "       -h    Show this help\n\n" ++
-        "Examples:\n" ++
-        "   Brief Mode      : moetranslate2 -b en:id \"Hello\"\n" ++
-        "   Full/detail Mode: moetranslate2 -f id:en \"Halo\"\n" ++
-        "   Auto Lang       : moetranslate2 -f auto:en \"こんにちは\"\n" ++
-        "   Detect Lang     : moetranslate2 -d \"你好\"\n" ++
-        "   Interactive     : moetranslate2 -i\n" ++
-        "                     moetranslate2 -i -f auto:en\n");
+    util.writeErrIgn(false,
+        \\moetranslate2 - A beautiful and simple language translator
+        \\
+        \\Usage: moetranslate2 [OPT] [SOURCE:TARGET] [TEXT]
+        \\       -b    Brief output
+        \\       -f    Full/detail output
+        \\       -r    Raw output (json)
+        \\       -d    Detect language
+        \\       -i    Interactive input mode
+        \\       -h    Show this help
+        \\
+        \\Examples:
+        \\   Brief Mode      : moetranslate2 -b en:id \"Hello\"
+        \\   Full/detail Mode: moetranslate2 -f id:en \"Halo\"
+        \\   Auto Lang       : moetranslate2 -f auto:en \"こんにちは\"
+        \\   Detect Lang     : moetranslate2 -d \"你好\"
+        \\   Interactive     : moetranslate2 -i
+        \\                     moetranslate2 -i -f auto:en
+        \\
+    );
 }
 
-fn printHelpIntrc(moe: *Moetranslate) void {
+fn printHelpIntr(moe: *Moetranslate) void {
     util.printErrIgn(false, "" ++
         "------------------------\n" ++
         Color.white.bold("Change the Languages:") ++
@@ -88,7 +91,7 @@ fn printHelpIntrc(moe: *Moetranslate) void {
     });
 }
 
-fn printInfoIntrc(moe: *Moetranslate) void {
+fn printInfoIntr(moe: *Moetranslate) void {
     util.printOutIgn(false, "" ++
         Color.white.bold("----[ Moetranslate2 ]----") ++ "\n" ++
         Color.yellow.bold("Interactive input mode") ++ "\n\n" ++
@@ -154,7 +157,7 @@ fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Error!Cmd {
         return .nop;
 
     if (cmd.len == 1) {
-        printInfoIntrc(moe);
+        printInfoIntr(moe);
         return .info;
     }
 
@@ -162,7 +165,7 @@ fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Error!Cmd {
         'q' => return .quit,
         'h' => {
             if (cmd.len == 2) {
-                printHelpIntrc(moe);
+                printHelpIntr(moe);
                 return .help;
             }
         },
@@ -223,8 +226,8 @@ fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Error!Cmd {
     return Error.InvalidArgument;
 }
 
-fn intrInput(moe: *Moetranslate) !void {
-    printInfoIntrc(moe);
+fn inputIntr(moe: *Moetranslate) !void {
+    printInfoIntr(moe);
 
     var input_buffer: [16 + config.prompt.len]u8 = undefined;
     var input_p: [:0]const u8 = undefined;
@@ -362,7 +365,7 @@ pub fn main() !void {
             },
             else => {
                 _ = c.setlocale(c.LC_CTYPE, "");
-                try intrInput(&moe);
+                try inputIntr(&moe);
             },
         }
     } else {
