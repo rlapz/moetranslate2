@@ -61,7 +61,7 @@ fn printHelp() void {
 }
 
 fn printHelpIntr(moe: *Moetranslate) void {
-    util.printErrIgn(false, "" ++
+    util.printOutIgn(false, "" ++
         "------------------------\n" ++
         Color.white.bold("Change the Languages:") ++
         " -> [{s}:{s}]\n" ++

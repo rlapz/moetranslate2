@@ -7,6 +7,8 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
+const config = @import("config.zig");
+
 pub const Color = enum(u32) {
     green = 32,
     yellow = 33,
@@ -17,10 +19,12 @@ pub const Color = enum(u32) {
 
     pub fn regular(self: Self, comptime _str: []const u8) []const u8 {
         if (builtin.os.tag != .windows) {
-            return std.fmt.comptimePrint("\x1b[00;{}m{s}\x1b[0m", .{
-                @enumToInt(self),
-                _str,
-            });
+            if (config.color) {
+                return std.fmt.comptimePrint("\x1b[00;{}m{s}\x1b[0m", .{
+                    @enumToInt(self),
+                    _str,
+                });
+            }
         }
 
         return _str;
@@ -28,10 +32,12 @@ pub const Color = enum(u32) {
 
     pub fn bold(self: Self, comptime _str: []const u8) []const u8 {
         if (builtin.os.tag != .windows) {
-            return std.fmt.comptimePrint("\x1b[01;{}m{s}\x1b[0m", .{
-                @enumToInt(self),
-                _str,
-            });
+            if (config.color) {
+                return std.fmt.comptimePrint("\x1b[01;{}m{s}\x1b[0m", .{
+                    @enumToInt(self),
+                    _str,
+                });
+            }
         }
 
         return _str;
