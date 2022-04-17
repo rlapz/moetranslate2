@@ -39,7 +39,7 @@ src_lang    : *const Lang,
 trg_lang    : *const Lang,
 text        : []const u8,
 
-pub fn init(allocator: std.mem.Allocator) !Self {
+pub inline fn init(allocator: std.mem.Allocator) !Self {
     const src_lang = comptime Lang.getByKey(config.default_src_lang) catch |err| {
         @compileError("config.zig: Unknown \"" ++ config.default_src_lang  +
                       "\" language code: "     ++ @errorName(err) ++ "\n");
@@ -63,6 +63,7 @@ pub fn init(allocator: std.mem.Allocator) !Self {
     };
 }
 // zig fmt: on
+
 pub fn deinit(self: *Self) void {
     _ = self;
 }

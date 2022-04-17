@@ -25,7 +25,7 @@ const c = @cImport({
     @cInclude("editline/readline.h");
 });
 
-const Cmd = enum(u8) {
+const Cmd = enum(u32) {
     quit,
     info,
     help,

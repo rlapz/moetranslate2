@@ -9,7 +9,6 @@ const OutputMode = @import("Moetranslate.zig").OutputMode;
 const maxInt = @import("std").math.maxInt(u8);
 
 // zig fmt: off
-
 // see: `Lang.zig`
 pub const default_src_lang            = "auto";
 pub const default_trg_lang            = "en";
@@ -27,5 +26,4 @@ pub const definition_max_lines: usize = maxInt;
 pub const example_max_lines   : usize = maxInt;
 pub const text_max_length     : usize = 4096;
 pub const buffer_max_length   : usize = 1024 * 512; // 512k
-
 // zig fmt: on

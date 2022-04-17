@@ -14,7 +14,6 @@ const Error = @import("Error.zig").Error;
 const Lang = @This();
 
 // zig fmt: off
-
 key  : []const u8,
 value: []const u8,
 
@@ -131,7 +130,6 @@ const langs = [_]Lang{
     .{ .key = "yo",    .value = "Yaruba"              },
     .{ .key = "zu",    .value = "Zulu"                },
 };
-
 // zig fmt: on
 
 // Will return the reference
