@@ -19,7 +19,6 @@ const Color = @import("Color.zig").Color;
 const getopt = @import("lib/getopt.zig");
 
 const c = @cImport({
-    @cInclude("stdio.h");
     @cInclude("stdlib.h");
     @cInclude("locale.h");
     @cInclude("editline/readline.h");
@@ -57,7 +56,7 @@ fn printHelp() void {
         "                     moetranslate2 -i -f auto:en\n");
 }
 
-fn printHelpIntrc(moe: *Moetranslate) void {
+fn printHelpIntr(moe: *Moetranslate) void {
     util.printErrIgn(false, "" ++
         "------------------------\n" ++
         Color.white.bold("Change the Languages:") ++
@@ -88,7 +87,7 @@ fn printHelpIntrc(moe: *Moetranslate) void {
     });
 }
 
-fn printInfoIntrc(moe: *Moetranslate) void {
+fn printInfoIntr(moe: *Moetranslate) void {
     util.printOutIgn(false, "" ++
         Color.white.bold("----[ Moetranslate2 ]----") ++ "\n" ++
         Color.yellow.bold("Interactive input mode") ++ "\n\n" ++
@@ -154,7 +153,7 @@ fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Error!Cmd {
         return .nop;
 
     if (cmd.len == 1) {
-        printInfoIntrc(moe);
+        printInfoIntr(moe);
         return .info;
     }
 
@@ -162,7 +161,7 @@ fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Error!Cmd {
         'q' => return .quit,
         'h' => {
             if (cmd.len == 2) {
-                printHelpIntrc(moe);
+                printHelpIntr(moe);
                 return .help;
             }
         },
@@ -223,8 +222,8 @@ fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Error!Cmd {
     return Error.InvalidArgument;
 }
 
-fn intrInput(moe: *Moetranslate) !void {
-    printInfoIntrc(moe);
+fn inputIntr(moe: *Moetranslate) !void {
+    printInfoIntr(moe);
 
     var input_buffer: [16 + config.prompt.len]u8 = undefined;
     var input_p: [:0]const u8 = undefined;
@@ -362,7 +361,7 @@ pub fn main() !void {
             },
             else => {
                 _ = c.setlocale(c.LC_CTYPE, "");
-                try intrInput(&moe);
+                try inputIntr(&moe);
             },
         }
     } else {
