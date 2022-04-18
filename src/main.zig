@@ -5,7 +5,6 @@
 // See LICENSE file for license details
 
 const std = @import("std");
-const builtin = @import("builtin");
 const dprint = std.debug.print;
 
 const config = @import("config.zig");

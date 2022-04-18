@@ -19,10 +19,7 @@ pub const default_output_mode: OutputMode = .parse;
 pub const default_result_type: UrlBuildType = .detail;
 
 // use color?
-pub const color = switch (builtin.os.tag) {
-    .windows => false, // disabled
-    else => true,
-};
+pub const color = true;
 
 pub const prompt = "->"; // Interactive
 pub const synonym_max_lines: usize = maxInt;
