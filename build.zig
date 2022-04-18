@@ -7,11 +7,8 @@ pub fn build(b: *std.build.Builder) void {
 
     exe.target     = b.standardTargetOptions(.{});
     exe.build_mode = b.standardReleaseOptions();
-
-    if (builtin.os.tag != .windows) {
-        exe.linkSystemLibraryName("edit");
-        exe.linkLibC();
-    }
+    exe.linkSystemLibraryName("edit");
+    exe.linkLibC();
 
     exe.install();
 

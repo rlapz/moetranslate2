@@ -15,6 +15,12 @@ const Lang = @import("Lang.zig");
 const Url = @import("Url.zig");
 const util = @import("util.zig");
 
+var stdout_buffered = std.io.bufferedWriter(std.io.getStdOut().writer());
+const bstdout = stdout_buffered.writer();
+const stdout = std.io.getStdOut().writer();
+const stderr = std.io.getStdErr().writer();
+const Self = @This();
+
 pub const OutputMode = enum(u32) {
     parse = 1,
     raw,
@@ -26,8 +32,6 @@ pub const OutputMode = enum(u32) {
         };
     }
 };
-
-const Self = @This();
 
 // zig fmt: off
 allocator   : std.mem.Allocator,
@@ -64,13 +68,7 @@ pub inline fn init(allocator: std.mem.Allocator) !Self {
 }
 // zig fmt: on
 
-pub fn deinit(self: *Self) void {
-    _ = self;
-}
-
 pub fn run(self: *Self) !void {
-    defer util.outFlush();
-
     // Allocate half of the buffer length (defined in `config.zig`),
     //  we give some chances to other functions
     self.buffer = try self.allocator.alloc(u8, config.buffer_max_length >> 1);
@@ -78,12 +76,12 @@ pub fn run(self: *Self) !void {
     self.text = std.mem.trim(u8, self.text, " ");
 
     if (self.text.len == 0) {
-        util.writeErrIgn(false, "The text is empty!\n");
+        try stderr.writeAll("The text is empty!\n");
         return Error.InvalidArgument;
     }
 
     if (self.text.len >= config.text_max_length) {
-        util.writeErrIgn(false, "The text is too long!\n");
+        try stderr.writeAll("The text is too long!\n");
         return Error.NoSpaceLeft;
     }
 
@@ -95,7 +93,7 @@ pub fn run(self: *Self) !void {
         self.text,
     ) catch |err| switch (err) {
         Error.NoSpaceLeft => {
-            util.writeErrIgn(false, "The text is too long!\n");
+            try stderr.writeAll("The text is too long!\n");
             return err;
         },
         else => return err,
@@ -111,7 +109,7 @@ pub fn run(self: *Self) !void {
 fn print(self: *Self, json_str: []const u8) !void {
     switch (self.output_mode) {
         .raw => {
-            util.printOutIgn(true, "{s}\n", .{json_str});
+            try stdout.print("{s}\n", .{json_str});
         },
         .parse => {
             var jsp = std.json.Parser.init(self.allocator, false);
@@ -121,30 +119,30 @@ fn print(self: *Self, json_str: []const u8) !void {
             defer self.json_obj.deinit();
 
             switch (self.result_type) {
-                .brief => self.printBrief(),
-                .detail => self.printDetail(),
-                .detect_lang => self.printDetectLang(),
+                .brief => try self.printBrief(),
+                .detail => try self.printDetail(),
+                .detect_lang => try self.printDetectLang(),
             }
         },
     }
 }
 
-fn printBrief(self: *Self) void {
+fn printBrief(self: *Self) !void {
     const jsn = self.json_obj.root.Array.items[0];
 
     if (jsn == .Array) {
         for (jsn.Array.items) |*v| {
             if (v.* == .Array and v.Array.items[0] == .String) {
-                util.printOutIgn(true, "{s}", .{v.Array.items[0].String});
+                try stdout.print("{s}", .{v.Array.items[0].String});
             }
         }
 
-        util.writeOutIgn(true, "\n");
+        try stdout.writeByte('\n');
     }
 }
 
 // zig fmt: off
-fn printDetail(self: *Self) void {
+fn printDetail(self: *Self) !void {
     // source text
     //     |
     // correction
@@ -165,17 +163,20 @@ fn printDetail(self: *Self) void {
     //     |
     // examples
 
+
+    defer stdout_buffered.flush() catch {};
+
     const jsn     = self.json_obj.root.Array;
     const trg_txt = jsn.items[0];
     const splls   = trg_txt.Array.items[trg_txt.Array.items.len - 1];
 
     // Source text
-    util.printOutIgn(true, "\"{s}\"\n", .{self.text});
+    try bstdout.print("\"{s}\"\n", .{self.text});
 
     // Correction
     const src_corr = jsn.items[7];
     if (src_corr == .Array and src_corr.Array.capacity > 0) {
-        util.printOutIgn(true,
+        try bstdout.print(
              Color.yellow.regular("{s} \"") ++ "{s}" ++
              Color.yellow.regular("\" ?")   ++ "\n",
             .{"> Did you mean:", src_corr.Array.items[1].String},
@@ -185,7 +186,7 @@ fn printDetail(self: *Self) void {
     // Source spelling
     const src_spll = splls.Array.items[splls.Array.items.len - 1];
     if (src_spll == .String) {
-        util.printOutIgn(true,
+        try bstdout.print(
             "( " ++
             Color.yellow.regular("{s}") ++
             " )\n",
@@ -195,25 +196,32 @@ fn printDetail(self: *Self) void {
 
     // Source lang
     const src_lang = jsn.items[2];
-    util.printOutIgn(true,
+    try bstdout.print(
          Color.green.regular("[ {s} ]") ++ ": {s}\n\n",
         .{ src_lang.String, Lang.getLangStr(src_lang.String) },
     );
 
     // Target text
-    self.printBrief();
+    const trg = jsn.items[0];
+    for (trg.Array.items) |*v| {
+        if (v.* == .Array and v.Array.items[0] == .String) {
+            try bstdout.print("{s}", .{v.Array.items[0].String});
+        }
+    }
+
+    try bstdout.writeByte('\n');
 
     // Target spelling
     const trg_spll = splls.Array.items[2];
     if (trg_spll == .String) {
-        util.printOutIgn(true,
+        try bstdout.print(
             "( " ++ Color.yellow.regular("{s}") ++ " )\n",
             .{trg_spll.String},
         );
     }
 
     // Target lang
-    util.printOutIgn(true,
+    try bstdout.print(
          Color.green.regular("[ {s} ]") ++ ": {s}\n",
         .{ self.trg_lang.key, Lang.getLangStr(self.trg_lang.key) },
     );
@@ -221,7 +229,7 @@ fn printDetail(self: *Self) void {
     // Synonyms
     const synms = jsn.items[1];
     if (synms == .Array) {
-        util.writeOutIgn(true, "\n\n------------------------");
+        try bstdout.writeAll("\n\n------------------------");
 
         for (synms.Array.items) |*v| {
             // Verb, Nouns, etc
@@ -230,12 +238,12 @@ fn printDetail(self: *Self) void {
                 // In some cases, there's no label at all.
                 // I think for the sake of beauty we should give a label,
                 // instead of printing an empty string.
-                util.writeOutIgn(true,
+                try bstdout.writeAll(
                     "\n" ++ Color.blue.bold("[ + ]"),
                 );
             } else {
                 const va = v.Array.items[0].String;
-                util.printOutIgn(true,
+                try bstdout.print(
                      "\n" ++ Color.blue.bold("[ {c}{s} ]"),
                     .{ std.ascii.toUpper(va[0]), va[1..] },
                 );
@@ -248,7 +256,7 @@ fn printDetail(self: *Self) void {
                 }
 
                 const vaa = vi.Array.items[0].String;
-                util.printOutIgn(true,
+                try bstdout.print(
                     "\n" ++ Color.white.bold("{}. {c}{s}") ++
                     "\n   " ++ Color.yellow.regular("-> "),
                     .{ ii + 1, std.ascii.toUpper(vaa[0]), vaa[1..] },
@@ -257,32 +265,32 @@ fn printDetail(self: *Self) void {
                 // Source Alt
                 var src_synn_alt = vi.Array.items[1].Array.items.len - 1;
                 for (vi.Array.items[1].Array.items) |*vii| {
-                    util.printOutIgn(true, "{s}", .{vii.String});
+                    try bstdout.print("{s}", .{vii.String});
 
                     if (src_synn_alt > 0) {
-                        util.writeOutIgn(true, ", ");
+                        try bstdout.writeAll( ", ");
                         src_synn_alt -= 1;
                     }
                 }
             }
-            util.writeOutIgn(true, "\n");
+            try bstdout.writeByte('\n');
         }
     }
 
     // Definitions
     const defs = jsn.items[12];
     if (defs == .Array) {
-        util.writeOutIgn(true, "\n\n------------------------");
+        try bstdout.writeAll("\n\n------------------------");
 
         for (defs.Array.items) |*v| {
             if (v.Array.items[0].String.len == 0) {
                 // No label
-                util.writeOutIgn(true,
+                try bstdout.writeAll(
                     "\n" ++ Color.yellow.bold("[ + ]"),
                 );
             } else {
                 const va = v.Array.items[0].String;
-                util.printOutIgn(true,
+                try bstdout.print(
                     "\n" ++ Color.yellow.bold("[ {c}{s} ]"),
                     .{ std.ascii.toUpper(va[0]), va[1..] },
                 );
@@ -294,7 +302,7 @@ fn printDetail(self: *Self) void {
                 }
 
                 const vaa = vi.Array.items[0].String;
-                util.printOutIgn(true,
+                try bstdout.print(
                     "\n" ++ Color.white.bold("{}. {c}{s}"),
                     .{ ii + 1, std.ascii.toUpper(vaa[0]), vaa[1..] },
                 );
@@ -305,7 +313,7 @@ fn printDetail(self: *Self) void {
                         const ss = def_cre.Array.items[0];
 
                         if (ss == .Array and ss.Array.items[0] == .String) {
-                            util.printOutIgn(true,
+                            try bstdout.print(
                                 Color.green.regular(" [ {s} ] ") ++ "",
                                 .{ss.Array.items[0].String}
                             );
@@ -316,7 +324,7 @@ fn printDetail(self: *Self) void {
                 if (vi.Array.items.len > 2) {
                     const def_v = vi.Array.items[vi.Array.items.len - 1];
                     if (def_v == .String) {
-                        util.printOutIgn(true,
+                        try bstdout.print(
                             "\n" ++ Color.yellow.regular("   ->") ++ " {c}{s}",
                             .{
                                 std.ascii.toUpper(def_v.String[0]),
@@ -326,14 +334,14 @@ fn printDetail(self: *Self) void {
                     }
                 }
             }
-            util.writeOutIgn(true, "\n");
+            try bstdout.writeByte('\n');
         }
     }
 
     // Examples
     const exmpls = jsn.items[13];
     if (exmpls == .Array) {
-        util.writeOutIgn(true, "\n\n------------------------\n");
+        try bstdout.writeAll("\n\n------------------------\n");
 
         // Warning: The prev contents will be replaced
         var _buffer = self.buffer[0..];
@@ -347,23 +355,23 @@ fn printDetail(self: *Self) void {
                 std.mem.copy(u8, _buffer, vex);
 
                 const vex_res = util.skipHtmlTags(_buffer[0..vex.len]);
-                util.printOutIgn(true,
+                try bstdout.print(
                     "{}. " ++ Color.yellow.regular("{c}{s}") ++ "\n",
                     .{ ii + 1, std.ascii.toUpper(vex_res[0]), vex_res[1..] },
                 );
             }
-            util.writeOutIgn(true, "\n");
+            try bstdout.writeByte('\n');
         }
     }
 }
 
-fn printDetectLang(self: *Self) void {
-    const jsn = self.json_obj.root.Array.items[2];
+fn printDetectLang(self: *Self) !void {
+    const jsn    = self.json_obj.root.Array.items[2];
 
     if (jsn != .String)
         return;
 
-    util.printOutIgn(true,
+    try stdout.print(
         "{s} ({s})\n",
         .{ jsn.String, Lang.getLangStr(jsn.String) },
     );

@@ -24,6 +24,9 @@ const c = @cImport({
     @cInclude("editline/readline.h");
 });
 
+const stdout = std.io.getStdOut().writer();
+const stderr = std.io.getStdErr().writer();
+
 const Cmd = enum(u32) {
     quit,
     info,
@@ -37,8 +40,8 @@ const Cmd = enum(u32) {
 
 var g_fba: *std.heap.FixedBufferAllocator = undefined;
 
-fn printHelp() void {
-    util.writeErrIgn(false,
+fn printHelp() !void {
+    try stdout.writeAll(
         \\moetranslate2 - A beautiful and simple language translator
         \\
         \\Usage: moetranslate2 [OPT] [SOURCE:TARGET] [TEXT]
@@ -60,8 +63,8 @@ fn printHelp() void {
     );
 }
 
-fn printHelpIntr(moe: *Moetranslate) void {
-    util.printOutIgn(false, "" ++
+fn printHelpIntr(moe: *Moetranslate) !void {
+    try stdout.print("" ++
         "------------------------\n" ++
         Color.white.bold("Change the Languages:") ++
         " -> [{s}:{s}]\n" ++
@@ -91,8 +94,8 @@ fn printHelpIntr(moe: *Moetranslate) void {
     });
 }
 
-fn printInfoIntr(moe: *Moetranslate) void {
-    util.printOutIgn(false, "" ++
+fn printInfoIntr(moe: *Moetranslate) !void {
+    try stdout.print("" ++
         Color.white.bold("----[ Moetranslate2 ]----") ++ "\n" ++
         Color.yellow.bold("Interactive input mode") ++ "\n\n" ++
         Color.white.bold("Languages   :") ++
@@ -119,22 +122,20 @@ fn parseLang(str: []const u8, src: **const Lang, trg: **const Lang) !void {
     // If src/trg lang is empty, use default value from `config.zig` file
     if (_src.len > 0) {
         src.* = Lang.getByKey(_src) catch |err| {
-            util.printErrIgn(
-                false,
+            stderr.print(
                 Color.yellow.regular("Unknown \"{s}\" language code") ++ "\n",
                 .{_src},
-            );
+            ) catch {};
             return err;
         };
     }
 
     if (_trg.len > 0) {
         trg.* = Lang.getByKey(_trg) catch |err| {
-            util.printErrIgn(
-                false,
+            stderr.print(
                 Color.yellow.regular("Unknown \"{s}\" language code") ++ "\n",
                 .{_trg},
-            );
+            ) catch {};
             return err;
         };
     }
@@ -157,7 +158,7 @@ fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Error!Cmd {
         return .nop;
 
     if (cmd.len == 1) {
-        printInfoIntr(moe);
+        printInfoIntr(moe) catch {};
         return .info;
     }
 
@@ -165,17 +166,16 @@ fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Error!Cmd {
         'q' => return .quit,
         'h' => {
             if (cmd.len == 2) {
-                printHelpIntr(moe);
+                printHelpIntr(moe) catch {};
                 return .help;
             }
         },
         'c' => {
             parseLang(cmd[2..], &moe.src_lang, &moe.trg_lang) catch |err| {
-                util.printErrIgn(
-                    false,
+                stderr.print(
                     Color.yellow.regular("Error: {s}") ++ "\n",
                     .{@errorName(err)},
-                );
+                ) catch {};
             };
 
             return .ch_lang;
@@ -194,11 +194,10 @@ fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Error!Cmd {
             if (std.fmt.parseInt(u32, _cmd, 10)) |opt| switch (opt) {
                 1...2 => {
                     moe.output_mode = @intToEnum(Moetranslate.OutputMode, opt);
-                    util.printErrIgn(
-                        false,
+                    stderr.print(
                         Color.green.regular("Output mode: {s}") ++ "\n",
                         .{moe.output_mode.str()},
-                    );
+                    ) catch {};
                     return .ch_output;
                 },
                 else => {},
@@ -210,11 +209,10 @@ fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Error!Cmd {
             if (std.fmt.parseInt(u32, _cmd, 10)) |opt| switch (opt) {
                 1...3 => {
                     moe.result_type = @intToEnum(Url.UrlBuildType, opt);
-                    util.printErrIgn(
-                        false,
+                    stderr.print(
                         Color.green.regular("Result type: {s}") ++ "\n",
                         .{moe.result_type.str()},
-                    );
+                    ) catch {};
                     return .ch_result;
                 },
                 else => {},
@@ -227,7 +225,9 @@ fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Error!Cmd {
 }
 
 fn inputIntr(moe: *Moetranslate) !void {
-    printInfoIntr(moe);
+    _ = c.setlocale(c.LC_CTYPE, "");
+
+    try printInfoIntr(moe);
 
     var input_buffer: [16 + config.prompt.len]u8 = undefined;
     var input_p: [:0]const u8 = undefined;
@@ -237,24 +237,22 @@ fn inputIntr(moe: *Moetranslate) !void {
     // Show the results immediately if the text is not null
     if (moe.text.len > 0) {
         moe.run() catch |_err| {
-            util.printErrIgn(
-                false,
+            stderr.print(
                 Color.yellow.regular("Error: {s}") ++ "\n",
                 .{@errorName(_err)},
-            );
+            ) catch {};
         };
         g_fba.reset();
-        util.writeOutIgn(false, "------------------------\n\n");
+        stdout.writeAll("------------------------\n\n") catch {};
     }
 
     var err: anyerror = Error.Success;
     while (true) {
         if (err != Error.Success) {
-            util.printErrIgn(
-                false,
+            stderr.print(
                 Color.yellow.regular("Error: {s}") ++ "\n",
                 .{@errorName(err)},
-            );
+            ) catch {};
             err = Error.Success;
         }
 
@@ -288,13 +286,13 @@ fn inputIntr(moe: *Moetranslate) !void {
         }
 
         if (moe.text.len > 0) {
-            util.writeOutIgn(false, "------------------------\n");
+            stdout.writeAll("------------------------\n") catch {};
 
             moe.run() catch |_err| {
                 err = _err;
             };
 
-            util.writeOutIgn(false, "------------------------\n\n");
+            stdout.writeAll("------------------------\n\n") catch {};
             g_fba.reset();
         }
 
@@ -308,7 +306,7 @@ pub fn main() !void {
     var gopts = getopt.getopt("b:f:d:rih");
 
     if (gopts.argv.len == 1) {
-        printHelp();
+        try printHelp();
         return Error.InvalidArgument;
     }
 
@@ -357,18 +355,8 @@ pub fn main() !void {
         },
     }
 
-    if (is_intrc) {
-        switch (builtin.os.tag) {
-            .windows => {
-                util.writeErrIgn("Interactive input mode: Not supported!\n");
-                return Error.InvalidArgument;
-            },
-            else => {
-                _ = c.setlocale(c.LC_CTYPE, "");
-                try inputIntr(&moe);
-            },
-        }
-    } else {
-        try moe.run();
-    }
+    if (is_intrc)
+        return inputIntr(&moe);
+
+    return moe.run();
 }
