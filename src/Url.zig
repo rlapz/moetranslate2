@@ -52,7 +52,7 @@ pub fn build(
     if (buffer.len <= (text.len * 3))
         return Error.NoSpaceLeft;
 
-    const text_enc = util.urlEncode(buffer, text);
+    const text_enc = encode(buffer, text);
 
     return switch (url_type) {
         .brief => std.fmt.bufPrint(
@@ -79,3 +79,24 @@ pub fn build(
     };
 }
 // zig fmt: on
+
+fn encode(dest: []u8, src: []const u8) []const u8 {
+    const hex = "0123456789abcdef";
+    var count: usize = 0;
+
+    for (src) |v| {
+        if (!std.ascii.isAlNum(v)) {
+            dest[count] = '%';
+            dest[count + 1] = hex[(v >> 4) & 15];
+            dest[count + 2] = hex[v & 15];
+
+            count += 3;
+
+            continue;
+        }
+        dest[count] = v;
+        count += 1;
+    }
+
+    return dest[0..count];
+}

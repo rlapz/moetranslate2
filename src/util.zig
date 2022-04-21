@@ -7,30 +7,6 @@
 const std = @import("std");
 const dprint = std.debug.print;
 
-const Error = @import("Error.zig").Error;
-const Lang = @import("Lang.zig");
-
-pub fn urlEncode(dest: []u8, src: []const u8) []const u8 {
-    const hex = "0123456789abcdef";
-    var count: usize = 0;
-
-    for (src) |v| {
-        if (!std.ascii.isAlNum(v)) {
-            dest[count] = '%';
-            dest[count + 1] = hex[(v >> 4) & 15];
-            dest[count + 2] = hex[v & 15];
-
-            count += 3;
-
-            continue;
-        }
-        dest[count] = v;
-        count += 1;
-    }
-
-    return dest[0..count];
-}
-
 pub fn skipHtmlTags(str: []u8) []const u8 {
     const Table = struct { tags: [2][]const u8 };
 

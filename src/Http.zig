@@ -11,10 +11,10 @@ const Error = @import("Error.zig").Error;
 const Self = @This();
 
 // zig fmt: off
-allocator : std.mem.Allocator,
-stream    : ?std.net.Stream = null,
-buffer    : ?[]u8           = null,
-has_resp  : bool            = false,
+allocator: std.mem.Allocator,
+stream   : ?std.net.Stream = null,
+buffer   : ?[]u8           = null,
+has_resp : bool            = false,
 // zig fmt: on
 
 pub inline fn init(
