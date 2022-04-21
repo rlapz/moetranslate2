@@ -34,14 +34,14 @@ pub const OutputMode = enum(u32) {
 };
 
 // zig fmt: off
-allocator   : std.mem.Allocator,
-buffer      : []u8,
-json_obj    : std.json.ValueTree,
-output_mode : OutputMode,
-result_type : Url.UrlBuildType,
-src_lang    : *const Lang,
-trg_lang    : *const Lang,
-text        : []const u8,
+allocator  : std.mem.Allocator,
+buffer     : []u8,
+json_obj   : std.json.ValueTree,
+output_mode: OutputMode,
+result_type: Url.UrlBuildType,
+src_lang   : *const Lang,
+trg_lang   : *const Lang,
+text       : []const u8,
 
 pub inline fn init(allocator: std.mem.Allocator) !Self {
     const src_lang = comptime Lang.getByKey(config.default_src_lang) catch |err| {
@@ -187,9 +187,7 @@ fn printDetail(self: *Self) !void {
     const src_spll = splls.Array.items[splls.Array.items.len - 1];
     if (src_spll == .String) {
         try bstdout.print(
-            "( " ++
-            Color.yellow.regular("{s}") ++
-            " )\n",
+            "( " ++ Color.yellow.regular("{s}") ++ " )\n",
             .{src_spll.String},
         );
     }
@@ -366,7 +364,7 @@ fn printDetail(self: *Self) !void {
 }
 
 fn printDetectLang(self: *Self) !void {
-    const jsn    = self.json_obj.root.Array.items[2];
+    const jsn = self.json_obj.root.Array.items[2];
 
     if (jsn != .String)
         return;
