@@ -11,10 +11,10 @@ const Error = @import("Error.zig").Error;
 const Self = @This();
 
 // zig fmt: off
-allocator: std.mem.Allocator,
-stream   : std.net.Stream,
-buffer   : []u8,
-has_resp : bool,
+allocator : std.mem.Allocator,
+stream    : ?std.net.Stream = null,
+buffer    : ?[]u8           = null,
+has_resp  : bool            = false,
 // zig fmt: on
 
 pub inline fn init(
@@ -26,13 +26,15 @@ pub inline fn init(
         .allocator = allocator,
         .stream = try std.net.tcpConnectToHost(allocator, host, port),
         .buffer = try allocator.alloc(u8, 4096),
-        .has_resp = false,
     };
 }
 
 pub inline fn deinit(self: *Self) void {
-    self.stream.close();
-    self.allocator.free(self.buffer);
+    if (self.stream != null)
+        self.stream.?.close();
+
+    if (self.buffer != null)
+        self.allocator.free(self.buffer.?);
 }
 
 pub fn sendRequest(self: *Self, req: []const u8) !void {
@@ -40,7 +42,7 @@ pub fn sendRequest(self: *Self, req: []const u8) !void {
     var sent: usize = 0;
 
     while (b_total < req.len) : (b_total += sent) {
-        sent = try self.stream.writer().write(req);
+        sent = try self.stream.?.writer().write(req);
 
         if (sent == 0)
             break;
@@ -48,12 +50,13 @@ pub fn sendRequest(self: *Self, req: []const u8) !void {
 }
 
 pub fn getResponse(self: *Self) ![]u8 {
-    var buffer_len = self.buffer.len;
+    var _buffer = self.buffer.?;
+    var buffer_len = _buffer.len;
     var b_total: usize = 0;
     var recvd: usize = 0;
 
     while (b_total < buffer_len) {
-        recvd = try self.stream.read(self.buffer[b_total..buffer_len]);
+        recvd = try self.stream.?.read(_buffer[b_total..buffer_len]);
 
         if (recvd == 0)
             break;
@@ -62,25 +65,25 @@ pub fn getResponse(self: *Self) ![]u8 {
 
         if (b_total == buffer_len) {
             buffer_len += (buffer_len >> 1);
-            self.buffer = try self.allocator.realloc(self.buffer, buffer_len);
+            _buffer = try self.allocator.realloc(_buffer, buffer_len);
         }
     }
 
-    if (std.mem.indexOf(u8, self.buffer, "200 OK") == null)
+    if (std.mem.indexOf(u8, _buffer, "200 OK") == null)
         return Error.InvalidResponse;
 
     self.has_resp = true;
-    self.buffer = self.buffer[0..b_total];
+    self.buffer = _buffer[0..b_total];
 
-    return self.buffer;
+    return self.buffer.?;
 }
 
 pub fn getJson(self: *Self) ![]u8 {
     if (!self.has_resp)
         _ = try self.getResponse();
 
-    var src = self.buffer;
-    const src_len = self.buffer.len;
+    var src = self.buffer.?;
+    const src_len = src.len;
 
     // Skipping http header...
     const end_h = std.mem.indexOf(u8, src, "\r\n\r\n") orelse {
