@@ -12,7 +12,6 @@ const Moetranslate = @import("Moetranslate.zig");
 const Error = @import("Error.zig").Error;
 const Lang = @import("Lang.zig");
 const Url = @import("Url.zig");
-const util = @import("util.zig");
 const Color = @import("Color.zig").Color;
 
 const getopt = @import("lib/getopt.zig");
