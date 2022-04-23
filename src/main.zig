@@ -34,6 +34,7 @@ const Cmd = enum(u32) {
     ch_output,
     ch_result,
     nop,
+    err,
 };
 
 var g_fba: *std.heap.FixedBufferAllocator = undefined;
@@ -141,50 +142,43 @@ fn parseLang(str: []const u8, src: **const Lang, trg: **const Lang) !void {
 
 inline fn showPrompt(
     buffer: []u8,
-    src: []const u8,
-    trg: []const u8,
+    src_lang: []const u8,
+    trg_lang: []const u8,
 ) Error![:0]const u8 {
     return std.fmt.bufPrintZ(
         buffer,
         "[ {s}:{s} ]{s} ",
-        .{ src, trg, config.prompt },
+        .{ src_lang, trg_lang, config.prompt },
     );
 }
 
-fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Error!Cmd {
+fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Cmd {
     if (cmd.len < 1 or cmd[0] != '/')
         return .nop;
 
-    if (cmd.len == 1) {
-        printInfoIntr(moe) catch {};
+    if (cmd.len == 1)
         return .info;
-    }
 
     switch (cmd[1]) {
         'q' => return .quit,
         'h' => {
-            if (cmd.len == 2) {
-                printHelpIntr(moe) catch {};
+            if (cmd.len == 2)
                 return .help;
-            }
         },
         'c' => {
-            parseLang(cmd[2..], &moe.src_lang, &moe.trg_lang) catch |err| {
-                stderr.print(
-                    Color.yellow.regular("Error: {s}") ++ "\n",
-                    .{@errorName(err)},
-                ) catch {};
-            };
-
-            return .ch_lang;
+            if (parseLang(cmd[2..], &moe.src_lang, &moe.trg_lang)) {
+                return .ch_lang;
+            } else |_| {}
         },
         's' => {
-            const l = moe.src_lang;
+            if (cmd.len == 2) {
+                const l = moe.src_lang;
 
-            moe.src_lang = moe.trg_lang;
-            moe.trg_lang = l;
+                moe.src_lang = moe.trg_lang;
+                moe.trg_lang = l;
 
-            return .sw_lang;
+                return .sw_lang;
+            }
         },
         'o' => {
             const _cmd = std.mem.trim(u8, cmd[2..], " ");
@@ -219,82 +213,52 @@ fn parseCmdIntr(moe: *Moetranslate, cmd: []const u8) Error!Cmd {
         else => {},
     }
 
-    return Error.InvalidArgument;
+    stderr.print(
+        Color.yellow.regular("Error: {s}") ++ "\n",
+        .{@errorName(Error.InvalidArgument)},
+    ) catch {};
+
+    return .err;
 }
 
 fn inputIntr(moe: *Moetranslate) !void {
-    _ = c.setlocale(c.LC_CTYPE, "");
+    var _buffer: [16 + config.prompt.len]u8 = undefined;
 
-    try printInfoIntr(moe);
-
-    var input_buffer: [16 + config.prompt.len]u8 = undefined;
-    var input_p: [:0]const u8 = undefined;
-
-    input_p = try showPrompt(&input_buffer, moe.src_lang.key, moe.trg_lang.key);
-
-    // Show the results immediately if the text is not null
-    if (moe.text.len > 0) {
-        moe.run() catch |_err| {
-            stderr.print(
-                Color.yellow.regular("Error: {s}") ++ "\n",
-                .{@errorName(_err)},
-            ) catch {};
-        };
-        g_fba.reset();
-        stdout.writeAll("------------------------\n\n") catch {};
-    }
-
-    var err: anyerror = Error.Success;
     while (true) {
-        if (err != Error.Success) {
-            stderr.print(
-                Color.yellow.regular("Error: {s}") ++ "\n",
-                .{@errorName(err)},
-            ) catch {};
-            err = Error.Success;
-        }
+        const prompt = showPrompt(
+            &_buffer,
+            moe.src_lang.key,
+            moe.trg_lang.key,
+        ) catch brk: {
+            break :brk "[error]-> ";
+        };
 
-        var input = c.readline(@as([*c]const u8, input_p)) orelse continue;
-        _ = c.add_history(input);
-        moe.text = std.mem.trim(u8, std.mem.span(input), " ");
+        var input_line = c.readline(prompt) orelse {
+            return stdout.writeAll("\n");
+        };
 
-        if (parseCmdIntr(moe, moe.text)) |_v| {
-            switch (_v) {
-                .quit => {
-                    c.free(input);
-                    break;
-                },
-                .nop => {},
-                else => {
-                    input_p = showPrompt(
-                        &input_buffer,
-                        moe.src_lang.key,
-                        moe.trg_lang.key,
-                    ) catch brk: {
-                        break :brk "[]-> ";
-                    };
+        defer c.free(input_line);
 
-                    continue;
-                },
-            }
-        } else |_err| {
-            err = _err;
-            c.free(input);
+        // If `input` is empty
+        if (input_line[0] == 0)
             continue;
+
+        _ = c.add_history(input_line);
+        moe.text = std.mem.trim(u8, std.mem.span(input_line), " ");
+
+        const cmd = parseCmdIntr(moe, moe.text);
+        switch (cmd) {
+            .nop => {
+                // Let's GO!
+                moe.run() catch {};
+                stdout.writeAll("------------------------\n\n") catch {};
+                g_fba.reset();
+            },
+            .quit => break,
+            .info => printInfoIntr(moe) catch {},
+            .help => printHelpIntr(moe) catch {},
+            else => {},
         }
-
-        if (moe.text.len > 0) {
-            stdout.writeAll("------------------------\n") catch {};
-
-            moe.run() catch |_err| {
-                err = _err;
-            };
-
-            stdout.writeAll("------------------------\n\n") catch {};
-            g_fba.reset();
-        }
-
-        c.free(input);
     }
 }
 
@@ -353,8 +317,23 @@ pub fn main() !void {
         },
     }
 
-    if (is_intrc)
+    if (is_intrc) {
+        _ = c.setlocale(c.LC_CTYPE, "");
+        try printInfoIntr(&moe);
+
+        if (moe.text.len > 0) {
+            moe.run() catch |_err| {
+                stderr.print(
+                    Color.yellow.regular("Error: {s}: {s}") ++ "\n",
+                    .{ "Moetranslate.run", @errorName(_err) },
+                ) catch {};
+            };
+            stdout.writeAll("------------------------\n\n") catch {};
+            fba.reset();
+        }
+
         return inputIntr(&moe);
+    }
 
     return moe.run();
 }
