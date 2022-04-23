@@ -12,9 +12,9 @@ const Self = @This();
 
 // zig fmt: off
 allocator: std.mem.Allocator,
-stream   : ?std.net.Stream = null,
-buffer   : ?[]u8           = null,
-has_resp : bool            = false,
+stream   : std.net.Stream,
+buffer   : []u8,
+has_resp : bool,
 // zig fmt: on
 
 pub inline fn init(
@@ -22,19 +22,20 @@ pub inline fn init(
     host: []const u8,
     port: u16,
 ) !Self {
+    var stream = try std.net.tcpConnectToHost(allocator, host, port);
+    errdefer stream.close();
+
     return Self{
         .allocator = allocator,
-        .stream = try std.net.tcpConnectToHost(allocator, host, port),
+        .stream = stream,
         .buffer = try allocator.alloc(u8, 4096),
+        .has_resp = false,
     };
 }
 
 pub inline fn deinit(self: *Self) void {
-    if (self.stream != null)
-        self.stream.?.close();
-
-    if (self.buffer != null)
-        self.allocator.free(self.buffer.?);
+    self.stream.close();
+    self.allocator.free(self.buffer);
 }
 
 pub fn sendRequest(self: *Self, req: []const u8) !void {
@@ -42,7 +43,7 @@ pub fn sendRequest(self: *Self, req: []const u8) !void {
     var sent: usize = 0;
 
     while (b_total < req.len) : (b_total += sent) {
-        sent = try self.stream.?.writer().write(req);
+        sent = try self.stream.writer().write(req);
 
         if (sent == 0)
             break;
@@ -50,13 +51,13 @@ pub fn sendRequest(self: *Self, req: []const u8) !void {
 }
 
 pub fn getResponse(self: *Self) ![]u8 {
-    var _buffer = self.buffer.?;
-    var buffer_len = _buffer.len;
+    var buffer = self.buffer;
+    var buffer_len = buffer.len;
     var b_total: usize = 0;
     var recvd: usize = 0;
 
     while (b_total < buffer_len) {
-        recvd = try self.stream.?.read(_buffer[b_total..buffer_len]);
+        recvd = try self.stream.read(buffer[b_total..buffer_len]);
 
         if (recvd == 0)
             break;
@@ -65,24 +66,24 @@ pub fn getResponse(self: *Self) ![]u8 {
 
         if (b_total == buffer_len) {
             buffer_len += (buffer_len >> 1);
-            _buffer = try self.allocator.realloc(_buffer, buffer_len);
+            buffer = try self.allocator.realloc(buffer, buffer_len);
         }
     }
 
-    if (std.mem.indexOf(u8, _buffer, "200 OK") == null)
+    if (std.mem.indexOf(u8, self.buffer, "200 OK") == null)
         return Error.InvalidResponse;
 
     self.has_resp = true;
-    self.buffer = _buffer[0..b_total];
+    self.buffer = buffer[0..b_total];
 
-    return self.buffer.?;
+    return self.buffer;
 }
 
 pub fn getJson(self: *Self) ![]u8 {
     if (!self.has_resp)
         _ = try self.getResponse();
 
-    var src = self.buffer.?;
+    var src = self.buffer;
     const src_len = src.len;
 
     // Skipping http header...
