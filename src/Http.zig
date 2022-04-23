@@ -83,31 +83,18 @@ pub fn getJson(self: *Self) ![]u8 {
     if (!self.has_resp)
         _ = try self.getResponse();
 
-    var src = self.buffer;
-    const src_len = src.len;
-
     // Skipping http header...
-    const end_h = std.mem.indexOf(u8, src, "\r\n\r\n") orelse {
+    const end_h = std.mem.indexOf(u8, self.buffer, "\r\n\r\n") orelse {
         return Error.InvalidJSON;
     };
 
-    var i: u8 = 0;
-    var istart = end_h + 4;
-    var iend = src_len;
+    var ret = self.buffer[end_h + 4 ..];
+    const st = std.mem.indexOf(u8, ret, "[") orelse {
+        return Error.InvalidJSON;
+    };
+    const ed = std.mem.lastIndexOf(u8, ret, "]") orelse {
+        return Error.InvalidJSON;
+    };
 
-    // Removing "stray" bytes
-    while (i < 2) : (i += 1) {
-        const st = std.mem.indexOfPos(u8, src, istart, "\r\n") orelse {
-            return Error.InvalidJSON;
-        };
-
-        const ed = std.mem.lastIndexOf(u8, src[0..iend], "\r\n") orelse {
-            return Error.InvalidJSON;
-        };
-
-        iend -= (src_len - ed);
-        istart += (st - istart);
-    }
-
-    return src[istart + 2 .. iend];
+    return ret[st .. ed + 1];
 }
