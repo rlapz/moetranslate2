@@ -95,34 +95,37 @@ fn parseLang(str: []const u8, src: **const Lang, trg: **const Lang) !void {
     const sep = std.mem.indexOfScalar(u8, str, ':') orelse {
         return Error.InvalidArgument;
     };
-
-    const _src = std.mem.trim(u8, str[0..sep], " ");
-    const _trg = std.mem.trim(u8, str[sep + 1 ..], " ");
-    var _lang_err: []const u8 = undefined;
+    var lang_err: []const u8 = undefined;
 
     errdefer {
         stderr.print(
             Color.yellow.regular("Unknown \"{s}\" language code") ++ "\n",
-            .{_lang_err},
+            .{lang_err},
         ) catch {};
     }
 
+    const _src = std.mem.trim(u8, str[0..sep], " ");
+    const _trg = std.mem.trim(u8, str[sep + 1 ..], " ");
     if (_src.len > 0) {
         src.* = Lang.getByKey(_src) catch |_err| {
-            _lang_err = _src;
+            lang_err = _src;
             return _err;
         };
     }
 
     if (_trg.len > 0) {
         trg.* = Lang.getByKey(_trg) catch |_err| {
-            _lang_err = _trg;
+            lang_err = _trg;
             return _err;
         };
     }
 }
 
-fn getIntrResult(moe: *Moetranslate, is_running: *bool) !void {
+fn getIntrResult(
+    moe: *Moetranslate,
+    is_running: *bool,
+    update_prompt: *bool,
+) !void {
     errdefer {
         stderr.print(
             Color.yellow.regular("Error: {s}") ++ "\n",
@@ -130,20 +133,14 @@ fn getIntrResult(moe: *Moetranslate, is_running: *bool) !void {
         ) catch {};
     }
 
-    var run = false;
-    defer {
-        if (run) {
-            // Let's GO!
-            moe.run() catch {};
-
-            stdout.writeAll("------------------------\n\n") catch {};
-            g_fba.reset();
-        }
-    }
-
     const cmd = moe.text;
     if (cmd[0] != '/') {
-        run = true;
+        // Let's GO!
+        try moe.run();
+
+        stdout.writeAll("------------------------\n\n") catch {};
+        g_fba.reset();
+
         return;
     }
 
@@ -160,7 +157,10 @@ fn getIntrResult(moe: *Moetranslate, is_running: *bool) !void {
 
             return printHelpIntr();
         },
-        'c' => return parseLang(cmd[2..], &moe.src_lang, &moe.trg_lang),
+        'c' => {
+            update_prompt.* = true;
+            return parseLang(cmd[2..], &moe.src_lang, &moe.trg_lang);
+        },
         's' => {
             if (cmd.len != 2)
                 return Error.InvalidArgument;
@@ -169,6 +169,7 @@ fn getIntrResult(moe: *Moetranslate, is_running: *bool) !void {
 
             moe.src_lang = moe.trg_lang;
             moe.trg_lang = l;
+            update_prompt.* = true;
         },
         'o' => {
             const opt = try std.fmt.parseInt(
@@ -212,16 +213,22 @@ fn inputIntr(moe: *Moetranslate) !void {
     var is_running: bool = true;
     var buffer: [16 + config.prompt.len]u8 = undefined;
     var prompt: [:0]const u8 = undefined;
+    var update_prompt: bool = true;
     var input_c: [*c]u8 = null;
 
+    _ = c.setlocale(c.LC_CTYPE, "");
     while (is_running) {
-        prompt = std.fmt.bufPrintZ(&buffer, "[ {s}:{s} ]{s} ", .{
-            moe.src_lang.key,
-            moe.trg_lang.key,
-            config.prompt,
-        }) catch brk: {
-            break :brk "-> ";
-        };
+        if (update_prompt) {
+            prompt = std.fmt.bufPrintZ(&buffer, "[ {s}:{s} ]{s} ", .{
+                moe.src_lang.key,
+                moe.trg_lang.key,
+                config.prompt,
+            }) catch brk: {
+                break :brk "-> ";
+            };
+
+            update_prompt = false;
+        }
 
         input_c = c.readline(prompt) orelse {
             return stdout.writeAll("\n");
@@ -236,7 +243,7 @@ fn inputIntr(moe: *Moetranslate) !void {
         _ = c.add_history(input_c);
         moe.text = std.mem.trim(u8, std.mem.span(input_c), " ");
 
-        getIntrResult(moe, &is_running) catch {};
+        getIntrResult(moe, &is_running, &update_prompt) catch {};
     }
 }
 
@@ -295,23 +302,18 @@ pub fn main() !void {
         },
     }
 
-    if (is_intrc) {
-        _ = c.setlocale(c.LC_CTYPE, "");
-        printInfoIntr(&moe);
+    if (moe.text.len > 0) {
+        if (is_intrc)
+            printInfoIntr(&moe);
 
-        if (moe.text.len > 0) {
-            moe.run() catch |_err| {
-                stderr.print(
-                    Color.yellow.regular("Error: {s}: {s}") ++ "\n",
-                    .{ "Moetranslate.run", @errorName(_err) },
-                ) catch {};
-            };
-            stdout.writeAll("------------------------\n\n") catch {};
-            fba.reset();
-        }
-
-        return inputIntr(&moe);
+        try moe.run();
     }
 
-    return moe.run();
+    if (is_intrc) {
+        if (moe.text.len == 0)
+            printInfoIntr(&moe);
+
+        fba.reset();
+        return inputIntr(&moe);
+    }
 }
