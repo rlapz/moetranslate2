@@ -52,7 +52,6 @@ fn printHelp() void {
 
 fn printHelpIntr() void {
     stdout.print(
-        "{s}\n" ++
         Color.white.bold("Show Info:") ++ "\n" ++
         " /\n\n" ++
         Color.white.bold("Change Languages:") ++ "\n" ++
@@ -71,8 +70,7 @@ fn printHelpIntr() void {
         Color.white.bold("Swap Languages:") ++ "\n" ++
         " /s\n\n" ++
         Color.white.bold("Quit:") ++ "\n" ++
-        " /q\n" ++
-        "{s}\n", .{config.separator, config.separator}
+        " /q\n" , .{}
     ) catch {};
 }
 
@@ -82,11 +80,9 @@ fn printInfoIntr(moe: *Moetranslate) void {
         Color.white.bold("Languages   :") ++ " {s} - {s}\n" ++
         Color.white.bold("Result type :") ++ " {s}\n" ++
         Color.white.bold("Output mode :") ++ " {s}\n" ++
-        Color.white.bold("Show help   :") ++ " /h\n\n" ++
-        "{s}\n", .{
+        Color.white.bold("Show help   :") ++ " /h\n\n", .{
             moe.src_lang.value,    moe.trg_lang.value,
             moe.result_type.str(), moe.output_mode.str(),
-            config.separator,
         }
     ) catch {};
 }
@@ -304,8 +300,10 @@ pub fn main() !void {
     }
 
     if (moe.text.len > 0) {
-        if (is_intrc)
+        if (is_intrc) {
             printInfoIntr(&moe);
+            stdout.print("{s}\n", .{config.separator}) catch {};
+        }
 
         try moe.run();
     }
