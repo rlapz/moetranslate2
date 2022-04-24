@@ -52,7 +52,6 @@ fn printHelp() void {
 
 fn printHelpIntr() void {
     stdout.print(
-        "{s}\n" ++
         Color.white.bold("Show Info:") ++ "\n" ++
         " /\n\n" ++
         Color.white.bold("Change Languages:") ++ "\n" ++
@@ -71,8 +70,7 @@ fn printHelpIntr() void {
         Color.white.bold("Swap Languages:") ++ "\n" ++
         " /s\n\n" ++
         Color.white.bold("Quit:") ++ "\n" ++
-        " /q\n" ++
-        "{s}\n", .{config.separator, config.separator}
+        " /q\n" , .{}
     ) catch {};
 }
 
