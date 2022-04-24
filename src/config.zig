@@ -21,6 +21,7 @@ pub const default_result_type: UrlBuildType = .detail;
 // use color?
 pub const color = true;
 
+pub const separator = "-------------------------";
 pub const prompt = "->"; // Interactive
 pub const synonym_max_lines: usize = maxInt;
 pub const definition_max_lines: usize = maxInt;

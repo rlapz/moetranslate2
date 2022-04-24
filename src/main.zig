@@ -52,7 +52,7 @@ fn printHelp() void {
 
 fn printHelpIntr() void {
     stdout.print(
-        "------------------------\n" ++
+        "{s}\n" ++
         Color.white.bold("Show Info:") ++ "\n" ++
         " /\n\n" ++
         Color.white.bold("Change Languages:") ++ "\n" ++
@@ -72,7 +72,7 @@ fn printHelpIntr() void {
         " /s\n\n" ++
         Color.white.bold("Quit:") ++ "\n" ++
         " /q\n" ++
-        "------------------------\n", .{}
+        "{s}\n", .{config.separator, config.separator}
     ) catch {};
 }
 
@@ -83,9 +83,10 @@ fn printInfoIntr(moe: *Moetranslate) void {
         Color.white.bold("Result type :") ++ " {s}\n" ++
         Color.white.bold("Output mode :") ++ " {s}\n" ++
         Color.white.bold("Show help   :") ++ " /h\n\n" ++
-        "------------------------\n", .{
+        "{s}\n", .{
             moe.src_lang.value,    moe.trg_lang.value,
             moe.result_type.str(), moe.output_mode.str(),
+            config.separator,
         }
     ) catch {};
 }
@@ -135,10 +136,9 @@ fn getIntrResult(
 
     const cmd = moe.text;
     if (cmd[0] != '/') {
+        stdout.print("{s}\n", .{config.separator}) catch {};
         // Let's GO!
         try moe.run();
-
-        stdout.writeAll("------------------------\n\n") catch {};
         g_fba.reset();
 
         return;
@@ -230,6 +230,7 @@ fn inputIntr(moe: *Moetranslate) !void {
             update_prompt = false;
         }
 
+        stdout.print("{s}\n", .{config.separator}) catch {};
         input_c = c.readline(prompt) orelse {
             return stdout.writeAll("\n");
         };
