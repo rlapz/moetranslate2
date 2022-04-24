@@ -227,7 +227,7 @@ fn printDetail(self: *Self) !void {
     // Synonyms
     const synms = jsn.items[1];
     if (synms == .Array) {
-        try bstdout.writeAll("\n\n------------------------");
+        try bstdout.print("\n\n{s}", .{config.separator});
 
         for (synms.Array.items) |*v| {
             // Verb, Nouns, etc
@@ -278,7 +278,7 @@ fn printDetail(self: *Self) !void {
     // Definitions
     const defs = jsn.items[12];
     if (defs == .Array) {
-        try bstdout.writeAll("\n\n------------------------");
+        try bstdout.print("\n\n{s}", .{config.separator});
 
         for (defs.Array.items) |*v| {
             if (v.Array.items[0].String.len == 0) {
@@ -339,7 +339,7 @@ fn printDetail(self: *Self) !void {
     // Examples
     const exmpls = jsn.items[13];
     if (exmpls == .Array) {
-        try bstdout.writeAll("\n\n------------------------\n");
+        try bstdout.print("\n\n{s}\n", .{config.separator});
 
         // Warning: The prev contents will be replaced
         var _buffer = self.buffer[0..];
