@@ -184,12 +184,14 @@ fn printDetail(self: *Self) !void {
     }
 
     // Source spelling
-    const src_spll = splls.Array.items[splls.Array.items.len - 1];
-    if (src_spll == .String) {
-        try bstdout.print(
-            "( " ++ Color.yellow.regular("{s}") ++ " )\n",
-            .{src_spll.String},
-        );
+    if (splls.Array.items.len > 3) {
+        const src_spll = splls.Array.items[splls.Array.items.len - 1];
+        if (src_spll == .String) {
+            try bstdout.print(
+                "( " ++ Color.yellow.regular("{s}") ++ " )\n",
+                .{src_spll.String},
+            );
+        }
     }
 
     // Source lang
@@ -210,12 +212,14 @@ fn printDetail(self: *Self) !void {
     try bstdout.writeByte('\n');
 
     // Target spelling
-    const trg_spll = splls.Array.items[2];
-    if (trg_spll == .String) {
-        try bstdout.print(
-            "( " ++ Color.yellow.regular("{s}") ++ " )\n",
-            .{trg_spll.String},
-        );
+    if (splls.Array.items.len > 2) {
+        const trg_spll = splls.Array.items[2];
+        if (trg_spll == .String) {
+            try bstdout.print(
+                "( " ++ Color.yellow.regular("{s}") ++ " )\n",
+                .{trg_spll.String},
+            );
+        }
     }
 
     // Target lang
