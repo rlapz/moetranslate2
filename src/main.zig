@@ -87,7 +87,7 @@ fn printInfoIntr(moe: *Moetranslate) void {
 }
 // zig fmt: on
 
-fn parseLang(str: []const u8, src: **const Lang, trg: **const Lang) !void {
+fn parseLang(moe: *Moetranslate, str: []const u8) !void {
     const sep = std.mem.indexOfScalar(u8, str, ':') orelse {
         return Error.InvalidArgument;
     };
@@ -101,16 +101,16 @@ fn parseLang(str: []const u8, src: **const Lang, trg: **const Lang) !void {
     }
 
     const _src = std.mem.trim(u8, str[0..sep], " ");
-    const _trg = std.mem.trim(u8, str[sep + 1 ..], " ");
     if (_src.len > 0) {
-        src.* = Lang.getByKey(_src) catch |_err| {
+        moe.src_lang = Lang.getByKey(_src) catch |_err| {
             lang_err = _src;
             return _err;
         };
     }
 
+    const _trg = std.mem.trim(u8, str[sep + 1 ..], " ");
     if (_trg.len > 0) {
-        trg.* = Lang.getByKey(_trg) catch |_err| {
+        moe.trg_lang = Lang.getByKey(_trg) catch |_err| {
             lang_err = _trg;
             return _err;
         };
@@ -131,12 +131,11 @@ fn getIntrResult(
 
     const cmd = moe.text;
     if (cmd[0] != '/') {
-        stdout.print("{s}\n", .{config.separator}) catch {};
-        // Let's GO!
-        try moe.run();
         g_fba.reset();
+        stdout.print("{s}\n", .{config.separator}) catch {};
 
-        return;
+        // Let's GO!
+        return moe.run();
     }
 
     if (cmd.len == 1)
@@ -154,7 +153,7 @@ fn getIntrResult(
         },
         'c' => {
             update_prompt.* = true;
-            return parseLang(cmd[2..], &moe.src_lang, &moe.trg_lang);
+            return parseLang(moe, cmd[2..]);
         },
         's' => {
             if (cmd.len != 2)
@@ -266,19 +265,11 @@ pub fn main() !void {
         switch (opts.opt) {
             'b' => {
                 moe.result_type = .brief;
-                try parseLang(
-                    std.mem.span(argv[gopts.optind - 1]),
-                    &moe.src_lang,
-                    &moe.trg_lang,
-                );
+                try parseLang(&moe, std.mem.span(argv[gopts.optind - 1]));
             },
             'f' => {
                 moe.result_type = .detail;
-                try parseLang(
-                    std.mem.span(argv[gopts.optind - 1]),
-                    &moe.src_lang,
-                    &moe.trg_lang,
-                );
+                try parseLang(&moe, std.mem.span(argv[gopts.optind - 1]));
             },
             'd' => moe.result_type = .detect_lang,
             'r' => moe.output_mode = .raw,
@@ -311,7 +302,6 @@ pub fn main() !void {
         if (moe.text.len == 0)
             printInfoIntr(&moe);
 
-        fba.reset();
         return inputIntr(&moe);
     }
 }
