@@ -166,7 +166,7 @@ fn getIntrResult(
             update_prompt.* = true;
         },
         'o' => {
-            const opt = try std.fmt.parseInt(
+            const opt = try std.fmt.parseUnsigned(
                 u32,
                 std.mem.trim(u8, cmd[2..], " "),
                 10,
@@ -183,7 +183,7 @@ fn getIntrResult(
             );
         },
         'r' => {
-            const opt = try std.fmt.parseInt(
+            const opt = try std.fmt.parseUnsigned(
                 u32,
                 std.mem.trim(u8, cmd[2..], " "),
                 10,
