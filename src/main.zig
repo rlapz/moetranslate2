@@ -17,7 +17,6 @@ const Color = @import("Color.zig").Color;
 const getopt = @import("lib/getopt.zig");
 
 const c = @cImport({
-    @cInclude("stdlib.h");
     @cInclude("locale.h");
     @cInclude("editline/readline.h");
 });
@@ -228,10 +227,10 @@ fn inputIntr(moe: *Moetranslate) !void {
 
         stdout.print("{s}\n", .{config.separator}) catch {};
         input_c = c.readline(prompt) orelse {
-            return stdout.writeAll("\n");
+            return stdout.writeByte('\n');
         };
 
-        defer c.free(input_c);
+        defer std.c.free(input_c);
 
         // If `input` is empty
         if (input_c[0] == 0)
