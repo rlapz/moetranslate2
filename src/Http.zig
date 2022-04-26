@@ -39,11 +39,12 @@ pub inline fn deinit(self: *Self) void {
 }
 
 pub fn sendRequest(self: *Self, req: []const u8) !void {
+    const req_len = req.len;
     var b_total: usize = 0;
     var sent: usize = 0;
 
     while (b_total < req.len) : (b_total += sent) {
-        sent = try self.stream.write(req);
+        sent = try self.stream.write(req[b_total .. req_len - b_total]);
 
         if (sent == 0)
             break;
