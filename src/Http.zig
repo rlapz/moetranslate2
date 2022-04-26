@@ -43,7 +43,7 @@ pub fn sendRequest(self: *Self, req: []const u8) !void {
     var sent: usize = 0;
 
     while (b_total < req.len) : (b_total += sent) {
-        sent = try self.stream.writer().write(req);
+        sent = try self.stream.write(req);
 
         if (sent == 0)
             break;
