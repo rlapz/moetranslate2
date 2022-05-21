@@ -61,7 +61,7 @@ fn printHelpIntr() void {
         "      1 = Brief\n" ++
         "      2 = Detail\n" ++
         "      3 = Detect Language\n\n" ++
-        Color.white.bold("Change Output Mode:") ++ "\n"++
+        Color.white.bold("Change Output Mode:") ++ "\n" ++
         " /o [OUTPUT]\n" ++
         "     OUTPUT:\n" ++
         "      1 = Parse\n" ++
