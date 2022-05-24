@@ -39,45 +39,18 @@ pub inline fn deinit(self: *Self) void {
 }
 
 pub fn sendRequest(self: *Self, req: []const u8) !void {
-    const req_len = req.len;
-    var b_total: usize = 0;
-    var sent: usize = 0;
-
-    while (b_total < req.len) : (b_total += sent) {
-        sent = try self.stream.write(req[b_total .. req_len - b_total]);
-
-        if (sent == 0)
-            break;
-    }
+    return self.stream.writer().writeAll(req);
 }
 
 pub fn getResponse(self: *Self) ![]u8 {
-    var buffer = self.buffer;
-    var buffer_len = buffer.len;
-    var b_total: usize = 0;
-    var recvd: usize = 0;
-
-    while (b_total < buffer_len) {
-        recvd = try self.stream.read(buffer[b_total..buffer_len]);
-
-        if (recvd == 0)
-            break;
-
-        b_total += recvd;
-
-        if (b_total == buffer_len) {
-            buffer_len += (buffer_len >> 1);
-            buffer = try self.allocator.realloc(buffer, buffer_len);
-        }
-    }
+    var b_total = try self.stream.reader().readAll(self.buffer);
 
     if (std.mem.indexOf(u8, self.buffer, "200 OK") == null)
         return Error.InvalidResponse;
 
     self.has_resp = true;
-    self.buffer = buffer[0..b_total];
 
-    return self.buffer;
+    return self.buffer[0..b_total];
 }
 
 pub fn getJson(self: *Self) ![]u8 {
