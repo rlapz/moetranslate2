@@ -103,7 +103,7 @@ pub fn run(self: *Self) !void {
     defer http.deinit();
 
     try http.sendRequest(url);
-    try self.print(try http.getJson());
+    try self.print(try http.getJson(self.buffer[url.len..]));
 }
 
 fn print(self: *Self, json_str: []const u8) !void {
