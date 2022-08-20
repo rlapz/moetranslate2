@@ -17,12 +17,46 @@ const protocol   = "HTTP/1.1";
 const query      = "/translate_a/single?client=gtx&ie=UTF-8&oe=UTF-8";
 const user_agent = "Mozilla/5.0";
 const connection = "Close";
-const field_name = "Host: {s}\r\nUser-Agent: {s}\r\nConnection: {s}\r\n\r\n";
+const req_format = "{s} {s} {s}\r\n" ++
+                   "Host: {s}\r\n" ++
+                   "User-Agent: {s}\r\n" ++
+                   "Connection: {s}\r\n\r\n";
 
-const brief      = "{s} {s}&dt=t&sl={s}&tl={s}&q={s} {s}\r\n";
-const detail     = "{s} {s}&dt=bd&dt=ex&dt=ld&dt=md&dt=rw&dt=rm&dt=ss&dt=" ++
-                   "t&dt=at&dt=gt&dt=qca&sl={s}&tl={s}&hl={s}&q={s} {s}\r\n";
-const det_lang   = "{s} {s}&sl=auto&q={s} {s}\r\n";
+// 0: source lang
+// 1: target lang
+// 2: text
+const brief = std.fmt.comptimePrint(
+    req_format,
+    .{
+        method, query ++ "&dt=t&sl={s}&tl={s}&q={s}", protocol,
+        host, user_agent, connection
+    }
+);
+
+// 0: source lang
+// 1: target lang
+// 2: hint lang
+// 3: text
+const detail = std.fmt.comptimePrint(
+    req_format,
+    .{
+        method,
+        query ++ "&dt=bd&dt=ex&dt=ld&dt=md&dt=rw&dt=rm&dt=ss&dt=" ++
+                 "t&dt=at&dt=gt&dt=qca&sl={s}&tl={s}&hl={s}&q={s}",
+        protocol,
+        host, user_agent, connection
+    }
+);
+
+// 0: text
+const det_lang = std.fmt.comptimePrint(
+    req_format,
+    .{
+        method, query ++ "&sl=auto&q={s}", protocol,
+        host, user_agent, connection
+    }
+);
+
 
 pub const UrlBuildType = enum(u32) {
     brief = 1,
@@ -47,7 +81,8 @@ pub fn build(
     trg_lang: []const u8,
     text    : []const u8,
 ) Error![]const u8 {
-    // At least the buffer length should be three times larger than the text length,
+    // At least the buffer length should be three times larger than
+    // the text length,
     // it's needed for encoding. CMIIW
     if (buffer.len <= (text.len * 3))
         return Error.NoSpaceLeft;
@@ -56,25 +91,22 @@ pub fn build(
 
     return switch (url_type) {
         .brief => std.fmt.bufPrint(
-            buffer[text_enc.len..], brief ++ field_name,
+            buffer[text_enc.len..], brief,
             .{
-                method, query, src_lang, trg_lang, text_enc, protocol, host,
-                user_agent, connection,
-            },
+                src_lang, trg_lang, text_enc
+            }
         ),
         .detail => std.fmt.bufPrint(
-            buffer[text_enc.len..], detail ++ field_name,
+            buffer[text_enc.len..], detail,
             .{
-                method, query, src_lang, trg_lang, trg_lang, text_enc, protocol,
-                host, user_agent, connection,
-            },
+                src_lang, trg_lang, trg_lang, text_enc
+            }
         ),
         .detect_lang => std.fmt.bufPrint(
-            buffer[text_enc.len..], det_lang ++ field_name,
+            buffer[text_enc.len..], det_lang,
             .{
-                method, query, text_enc, protocol, host, user_agent,
-                connection,
-            },
+                text_enc
+            }
         ),
     };
 }
