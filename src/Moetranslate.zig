@@ -86,8 +86,8 @@ pub fn run(self: *Self) !void {
     }
 
     const url = Url.build(
-        self.result_type,
         self.buffer,
+        self.result_type,
         self.src_lang.key,
         self.trg_lang.key,
         self.text,

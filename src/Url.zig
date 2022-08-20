@@ -75,8 +75,8 @@ pub const UrlBuildType = enum(u32) {
 
 
 pub fn build(
-    url_type: UrlBuildType,
     buffer  : []u8,
+    url_type: UrlBuildType,
     src_lang: []const u8,
     trg_lang: []const u8,
     text    : []const u8,
