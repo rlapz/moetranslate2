@@ -38,7 +38,7 @@ pub const UrlBuildType = enum(u32) {
     }
 };
 
-pub fn build(
+pub fn buildRequest(
     buffer: []u8,
     url_type: UrlBuildType,
     src_lang: []const u8,

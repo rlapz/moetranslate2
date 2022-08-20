@@ -85,24 +85,24 @@ pub fn run(self: *Self) !void {
         return Error.NoSpaceLeft;
     }
 
-    const url = Url.build(
-        self.buffer,
-        self.result_type,
-        self.src_lang.key,
-        self.trg_lang.key,
-        self.text,
-    ) catch |err| switch (err) {
-        Error.NoSpaceLeft => {
-            try stderr.writeAll("The text is too long!\n");
-            return err;
-        },
-        else => return err,
-    };
-
     var http = try Http.init(self.allocator, Url.host, Url.port);
     defer http.deinit();
 
-    try http.sendRequest(url);
+    try http.sendRequest(
+        Url.buildRequest(
+            self.buffer,
+            self.result_type,
+            self.src_lang.key,
+            self.trg_lang.key,
+            self.text,
+        ) catch |err| switch (err) {
+            Error.NoSpaceLeft => {
+                try stderr.writeAll("The text is too long!\n");
+                return err;
+            },
+            else => return err,
+        },
+    );
     try self.print(try http.getJson());
 }
 
