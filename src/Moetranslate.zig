@@ -107,24 +107,22 @@ pub fn run(self: *Self) !void {
 }
 
 fn print(self: *Self, json_str: []const u8) !void {
-    switch (self.output_mode) {
-        .raw => {
-            try stdout.print("{s}\n", .{json_str});
-        },
-        .parse => {
+    return switch (self.output_mode) {
+        .raw => stdout.print("{s}\n", .{json_str}),
+        .parse => brk: {
             var jsp = std.json.Parser.init(self.allocator, false);
             defer jsp.deinit();
 
             self.json_obj = try jsp.parse(json_str);
             defer self.json_obj.deinit();
 
-            switch (self.result_type) {
-                .brief => try self.printBrief(),
-                .detail => try self.printDetail(),
-                .detect_lang => try self.printDetectLang(),
-            }
+            break :brk switch (self.result_type) {
+                .brief => self.printBrief(),
+                .detail => self.printDetail(),
+                .detect_lang => self.printDetectLang(),
+            };
         },
-    }
+    };
 }
 
 fn printBrief(self: *Self) !void {
