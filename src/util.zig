@@ -5,7 +5,6 @@
 // See LICENSE file for license details
 
 const std = @import("std");
-const dprint = std.debug.print;
 
 pub fn skipHtmlTags(str: []u8) []const u8 {
     const Table = struct { tags: [2][]const u8 };
@@ -16,14 +15,13 @@ pub fn skipHtmlTags(str: []u8) []const u8 {
     };
 
     var len = str.len;
-    var i: usize = 0;
 
-    while (i < tables.len) : (i += 1) {
+    for (tables) |*v| {
         var tclose: usize = 0;
         var ii: usize = 0;
 
-        const tag0 = tables[i].tags[0];
-        const tag1 = tables[i].tags[1];
+        const tag0 = v.tags[0];
+        const tag1 = v.tags[1];
 
         while (ii < len) : (ii = tclose - 1) {
             const op = std.mem.indexOfPos(u8, str, ii, tag0) orelse break;
