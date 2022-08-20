@@ -43,7 +43,7 @@ pub inline fn sendRequest(self: *Self, req: []const u8) !void {
 }
 
 pub fn getJson(self: *Self) ![]u8 {
-    var bf = try self.stream.reader().readAllAlloc(self.allocator, 1024 * 128);
+    var bf = try self.stream.reader().readAllAlloc(self.allocator, 1024 * 64);
 
     self.buffer = bf;
 

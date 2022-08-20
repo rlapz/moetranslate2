@@ -35,7 +35,6 @@ pub const OutputMode = enum(u32) {
 
 // zig fmt: off
 allocator  : std.mem.Allocator,
-buffer     : []u8,
 json_obj   : std.json.ValueTree,
 output_mode: OutputMode,
 result_type: Url.UrlBuildType,
@@ -57,7 +56,6 @@ pub inline fn init(allocator: std.mem.Allocator) !Self {
 
     return Self{
         .allocator   = allocator,
-        .buffer      = undefined,
         .json_obj    = undefined,
         .output_mode = config.default_output_mode,
         .result_type = config.default_result_type,
@@ -69,10 +67,6 @@ pub inline fn init(allocator: std.mem.Allocator) !Self {
 // zig fmt: on
 
 pub fn run(self: *Self) !void {
-    // Allocate an half of the buffer length (defined in `config.zig`),
-    //  we give some chances to other functions
-    self.buffer = try self.allocator.alloc(u8, config.buffer_max_length >> 1);
-    defer self.allocator.free(self.buffer);
     self.text = std.mem.trim(u8, self.text, " ");
 
     if (self.text.len == 0) {
@@ -81,16 +75,17 @@ pub fn run(self: *Self) !void {
     }
 
     if (self.text.len >= config.text_max_length) {
-        try stderr.writeAll("The text is too long!\n");
+        try stderr.print("The text is too long!: {}\n", .{self.text.len});
         return Error.NoSpaceLeft;
     }
 
     var http = try Http.init(self.allocator, Url.host, Url.port);
     defer http.deinit();
 
+    var buffer = try self.allocator.alloc(u8, (config.text_max_length * 3) + 128);
     try http.sendRequest(
         Url.buildRequest(
-            self.buffer,
+            buffer,
             self.result_type,
             self.src_lang.key,
             self.trg_lang.key,
@@ -103,6 +98,9 @@ pub fn run(self: *Self) !void {
             else => return err,
         },
     );
+
+    self.allocator.free(buffer);
+
     try self.print(try http.getJson());
 }
 
@@ -343,18 +341,17 @@ fn printDetail(self: *Self) !void {
     if (exmpls == .Array) {
         try bstdout.print("\n\n{s}\n", .{config.separator});
 
-        // Warning: The prev contents will be replaced
-        var _buffer = self.buffer[0..];
+        var buffer: [256]u8 = undefined;
+
         for (exmpls.Array.items) |*v| {
             for (v.Array.items) |*vi, ii| {
-                if (ii == config.example_max_lines) {
+                if (ii == config.example_max_lines)
                     break;
-                }
 
                 const vex = vi.Array.items[0].String;
-                std.mem.copy(u8, _buffer, vex);
+                std.mem.copy(u8, &buffer, vex);
 
-                const vex_res = util.skipHtmlTags(_buffer[0..vex.len]);
+                const vex_res = util.skipHtmlTags(buffer[0..vex.len]);
                 try bstdout.print(
                     "{}. " ++ Color.yellow.regular("{c}{s}") ++ "\n",
                     .{ ii + 1, std.ascii.toUpper(vex_res[0]), vex_res[1..] },

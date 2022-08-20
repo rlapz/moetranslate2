@@ -45,13 +45,6 @@ pub fn buildRequest(
     trg_lang: []const u8,
     text: []const u8,
 ) Error![]const u8 {
-    // At least the buffer length should be three times larger than
-    // the text length,
-    // it's needed for encoding. CMIIW
-    if (buffer.len <= (text.len * 3))
-        return Error.NoSpaceLeft;
-
-    // zig fmt: on
     var ret = switch (url_type) {
         .brief => try std.fmt.bufPrint(
             buffer,
@@ -70,7 +63,7 @@ pub fn buildRequest(
         ),
     };
 
-    const text_enc = encode(buffer[ret.len..], text);
+    const text_enc = try encode(buffer[ret.len..], text);
     var len = ret.len + text_enc.len;
 
     ret = try std.fmt.bufPrint(
@@ -82,11 +75,14 @@ pub fn buildRequest(
     return buffer[0 .. len + ret.len];
 }
 
-fn encode(dest: []u8, src: []const u8) []const u8 {
+fn encode(dest: []u8, src: []const u8) ![]const u8 {
     const hex = "0123456789abcdef";
     var count: usize = 0;
 
     for (src) |v| {
+        if (count + 3 >= dest.len)
+            break;
+
         if (!std.ascii.isAlNum(v)) {
             dest[count] = '%';
             dest[count + 1] = hex[(v >> 4) & 15];
@@ -96,9 +92,13 @@ fn encode(dest: []u8, src: []const u8) []const u8 {
 
             continue;
         }
+
         dest[count] = v;
         count += 1;
     }
+
+    if (count < src.len)
+        return Error.NoSpaceLeft;
 
     return dest[0..count];
 }
