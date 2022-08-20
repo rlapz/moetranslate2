@@ -69,7 +69,7 @@ pub inline fn init(allocator: std.mem.Allocator) !Self {
 // zig fmt: on
 
 pub fn run(self: *Self) !void {
-    // Allocate half of the buffer length (defined in `config.zig`),
+    // Allocate an half of the buffer length (defined in `config.zig`),
     //  we give some chances to other functions
     self.buffer = try self.allocator.alloc(u8, config.buffer_max_length >> 1);
     defer self.allocator.free(self.buffer);
@@ -103,7 +103,7 @@ pub fn run(self: *Self) !void {
     defer http.deinit();
 
     try http.sendRequest(url);
-    try self.print(try http.getJson(self.buffer[url.len..]));
+    try self.print(try http.getJson());
 }
 
 fn print(self: *Self, json_str: []const u8) !void {

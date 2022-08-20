@@ -13,6 +13,7 @@ const Self = @This();
 // zig fmt: off
 allocator: std.mem.Allocator,
 stream   : std.net.Stream,
+buffer   : ?[]u8,
 // zig fmt: on
 
 pub inline fn init(
@@ -27,20 +28,24 @@ pub inline fn init(
             host,
             port,
         ),
+        .buffer = null,
     };
 }
 
 pub inline fn deinit(self: *Self) void {
     self.stream.close();
+    if (self.buffer != null)
+        self.allocator.free(self.buffer.?);
 }
 
 pub inline fn sendRequest(self: *Self, req: []const u8) !void {
     return self.stream.writer().writeAll(req);
 }
 
-pub fn getJson(self: *Self, buffer: []u8) ![]u8 {
-    var b_total = try self.stream.reader().readAll(buffer);
-    var bf = buffer[0..b_total];
+pub fn getJson(self: *Self) ![]u8 {
+    var bf = try self.stream.reader().readAllAlloc(self.allocator, 1024 * 128);
+
+    self.buffer = bf;
 
     if (std.mem.indexOf(u8, bf, "200 OK") == null)
         return Error.InvalidResponse;
