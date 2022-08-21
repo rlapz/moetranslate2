@@ -341,20 +341,17 @@ fn printDetail(self: *Self) !void {
     if (exmpls == .Array) {
         try bstdout.print("\n\n{s}\n", .{config.separator});
 
-        var buffer: [256]u8 = undefined;
+        var tmp: [256]u8 = undefined;
 
         for (exmpls.Array.items) |*v| {
             for (v.Array.items) |*vi, ii| {
                 if (ii == config.example_max_lines)
                     break;
 
-                const vex = vi.Array.items[0].String;
-                std.mem.copy(u8, &buffer, vex);
-
-                const vex_res = util.skipHtmlTags(buffer[0..vex.len]);
+                const vex = util.skipHtmlTags(&tmp, vi.Array.items[0].String);
                 try bstdout.print(
                     "{}. " ++ Color.yellow.regular("{c}{s}") ++ "\n",
-                    .{ ii + 1, std.ascii.toUpper(vex_res[0]), vex_res[1..] },
+                    .{ ii + 1, std.ascii.toUpper(vex[0]), vex[1..] },
                 );
             }
             try bstdout.writeByte('\n');
