@@ -162,10 +162,7 @@ fn getIntrResult(
             if (cmd.len != 2)
                 return Error.InvalidArgument;
 
-            const l = moe.src_lang;
-
-            moe.src_lang = moe.trg_lang;
-            moe.trg_lang = l;
+            std.mem.swap(*const Lang, &moe.src_lang, &moe.trg_lang);
             update_prompt.* = true;
         },
         'o' => {
