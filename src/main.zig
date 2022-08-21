@@ -132,7 +132,7 @@ fn getIntrResult(
     is_running: *bool,
     update_prompt: *bool,
 ) !void {
-    const cmd = moe.text;
+    var cmd = moe.text;
     if (cmd[0] != '/') {
         g_fba.reset();
         stdout.writeAll(config.separator ++ "\n") catch {};
@@ -140,6 +140,8 @@ fn getIntrResult(
         // Let's GO!
         return moe.run();
     }
+
+    cmd = std.mem.trim(u8, cmd, " ");
 
     if (cmd.len == 1)
         return printInfoIntr(moe);
