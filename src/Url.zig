@@ -25,7 +25,7 @@ const det_lang   = "";
 // zig fmt: on
 
 pub const UrlBuildType = enum(u32) {
-    brief = 1,
+    brief,
     detail,
     detect_lang,
 

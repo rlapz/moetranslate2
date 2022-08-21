@@ -87,6 +87,16 @@ fn printInfoIntr(moe: *Moetranslate) void {
 }
 // zig fmt: on
 
+inline fn parseEnum(arg: []const u8) !u32 {
+    return std.fmt.parseUnsigned(
+        u32,
+        std.mem.trim(u8, arg, " "),
+        10,
+    ) catch {
+        return Error.InvalidArgument;
+    };
+}
+
 fn parseLang(moe: *Moetranslate, str: []const u8) !void {
     const sep = std.mem.indexOfScalar(u8, str, ':') orelse {
         return Error.InvalidArgument;
@@ -159,13 +169,8 @@ fn getIntrResult(
             update_prompt.* = true;
         },
         'o' => {
-            const opt = try std.fmt.parseUnsigned(
-                u32,
-                std.mem.trim(u8, cmd[2..], " "),
-                10,
-            );
-
-            if (opt < 1 or opt > 2)
+            const opt = try parseEnum(cmd[2..]);
+            if (opt > 1)
                 return Error.InvalidArgument;
 
             moe.output_mode = @intToEnum(Moetranslate.OutputMode, opt);
@@ -176,13 +181,8 @@ fn getIntrResult(
             );
         },
         'r' => {
-            const opt = try std.fmt.parseUnsigned(
-                u32,
-                std.mem.trim(u8, cmd[2..], " "),
-                10,
-            );
-
-            if (opt < 1 or opt > 3)
+            const opt = try parseEnum(cmd[2..]);
+            if (opt > 2)
                 return Error.InvalidArgument;
 
             moe.result_type = @intToEnum(Url.UrlBuildType, opt);

@@ -22,7 +22,7 @@ const bstdout = stdout_buffered.writer();
 const Self = @This();
 
 pub const OutputMode = enum(u32) {
-    parse = 1,
+    parse,
     raw,
 
     pub fn str(self: @This()) []const u8 {
