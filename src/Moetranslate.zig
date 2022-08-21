@@ -15,10 +15,10 @@ const Lang = @import("Lang.zig");
 const Url = @import("Url.zig");
 const util = @import("util.zig");
 
-var stdout_buffered = std.io.bufferedWriter(std.io.getStdOut().writer());
-const bstdout = stdout_buffered.writer();
 const stdout = std.io.getStdOut().writer();
 const stderr = std.io.getStdErr().writer();
+var stdout_buffered = std.io.bufferedWriter(stdout);
+const bstdout = stdout_buffered.writer();
 const Self = @This();
 
 pub const OutputMode = enum(u32) {
