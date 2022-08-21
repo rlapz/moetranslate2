@@ -122,13 +122,6 @@ fn getIntrResult(
     is_running: *bool,
     update_prompt: *bool,
 ) !void {
-    errdefer {
-        stderr.print(
-            Color.yellow.regular("Error: {s}") ++ "\n",
-            .{@errorName(Error.InvalidArgument)},
-        ) catch {};
-    }
-
     const cmd = moe.text;
     if (cmd[0] != '/') {
         g_fba.reset();
@@ -238,7 +231,12 @@ fn inputIntr(moe: *Moetranslate) !void {
         _ = c.add_history(input_c);
         moe.text = std.mem.span(input_c);
 
-        getIntrResult(moe, &is_running, &update_prompt) catch {};
+        getIntrResult(moe, &is_running, &update_prompt) catch |err| {
+            stderr.print(
+                Color.yellow.regular("Error: {s}") ++ "\n",
+                .{@errorName(err)},
+            ) catch {};
+        };
     }
 }
 
