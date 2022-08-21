@@ -132,7 +132,7 @@ fn getIntrResult(
     const cmd = moe.text;
     if (cmd[0] != '/') {
         g_fba.reset();
-        stdout.print("{s}\n", .{config.separator}) catch {};
+        stdout.writeAll(config.separator ++ "\n") catch {};
 
         // Let's GO!
         return moe.run();
@@ -224,7 +224,7 @@ fn inputIntr(moe: *Moetranslate) !void {
             update_prompt = false;
         }
 
-        stdout.print("{s}\n", .{config.separator}) catch {};
+        stdout.writeAll(config.separator ++ "\n") catch {};
         input_c = c.readline(prompt) orelse {
             return stdout.writeByte('\n');
         };
@@ -292,7 +292,7 @@ pub fn main() !void {
     if (moe.text.len > 0) {
         if (is_intrc) {
             printInfoIntr(&moe);
-            stdout.print("{s}\n", .{config.separator}) catch {};
+            stdout.writeAll(config.separator ++ "\n") catch {};
         }
 
         try moe.run();
