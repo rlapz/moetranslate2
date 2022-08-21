@@ -236,7 +236,7 @@ fn inputIntr(moe: *Moetranslate) !void {
             continue;
 
         _ = c.add_history(input_c);
-        moe.text = std.mem.trim(u8, std.mem.span(input_c), " ");
+        moe.text = std.mem.span(input_c);
 
         getIntrResult(moe, &is_running, &update_prompt) catch {};
     }
