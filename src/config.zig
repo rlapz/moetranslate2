@@ -5,7 +5,7 @@
 // See LICENSE file for license details
 
 const builtin = @import("builtin");
-const UrlBuildType = @import("Url.zig").UrlBuildType;
+const UrlBuildType = @import("url.zig").UrlBuildType;
 const OutputMode = @import("Moetranslate.zig").OutputMode;
 const maxInt = @import("std").math.maxInt(u8);
 

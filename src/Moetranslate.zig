@@ -12,7 +12,7 @@ const config = @import("config.zig");
 const Error = @import("Error.zig").Error;
 const Http = @import("Http.zig");
 const Lang = @import("Lang.zig");
-const Url = @import("Url.zig");
+const url = @import("url.zig");
 const util = @import("util.zig");
 
 const stdout = std.io.getStdOut().writer();
@@ -37,7 +37,7 @@ pub const OutputMode = enum(u32) {
 allocator  : std.mem.Allocator,
 json_obj   : std.json.ValueTree,
 output_mode: OutputMode,
-result_type: Url.UrlBuildType,
+result_type: url.UrlBuildType,
 src_lang   : *const Lang,
 trg_lang   : *const Lang,
 text       : []const u8,
@@ -79,12 +79,12 @@ pub fn run(self: *Self) !void {
         return Error.NoSpaceLeft;
     }
 
-    var http = try Http.init(self.allocator, Url.host, Url.port);
+    var http = try Http.init(self.allocator, url.host, url.port);
     defer http.deinit();
 
     var buffer = try self.allocator.alloc(u8, (config.text_max_length * 3) + 128);
     try http.sendRequest(
-        Url.buildRequest(
+        url.buildRequest(
             buffer,
             self.result_type,
             self.src_lang.key,

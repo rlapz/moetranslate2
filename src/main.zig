@@ -11,7 +11,7 @@ const config = @import("config.zig");
 const Moetranslate = @import("Moetranslate.zig");
 const Error = @import("Error.zig").Error;
 const Lang = @import("Lang.zig");
-const Url = @import("Url.zig");
+const url = @import("url.zig");
 const Color = @import("Color.zig").Color;
 
 const getopt = @import("lib/getopt.zig");
@@ -184,7 +184,7 @@ fn getIntrResult(
             if (opt > 2)
                 return Error.InvalidArgument;
 
-            moe.result_type = @intToEnum(Url.UrlBuildType, opt);
+            moe.result_type = @intToEnum(url.UrlBuildType, opt);
 
             try stderr.print(
                 Color.green.regular("Result type: {s}") ++ "\n",
