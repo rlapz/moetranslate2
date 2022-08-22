@@ -7,8 +7,6 @@
 const std = @import("std");
 
 pub const Error = error{
-    Success,
-
     InvalidArgument,
     InvalidJSON,
     InvalidResponse,
