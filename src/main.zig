@@ -58,14 +58,14 @@ fn printHelpIntr() void {
         Color.white.bold("Change Result Type:") ++ "\n" ++
         " /r [TYPE]\n" ++
         "     TYPE:\n" ++
-        "      1 = Brief\n" ++
-        "      2 = Detail\n" ++
-        "      3 = Detect Language\n\n" ++
+        "      0 = Brief\n" ++
+        "      1 = Detail\n" ++
+        "      2 = Detect Language\n\n" ++
         Color.white.bold("Change Output Mode:") ++ "\n" ++
         " /o [OUTPUT]\n" ++
         "     OUTPUT:\n" ++
-        "      1 = Parse\n" ++
-        "      2 = Raw\n\n" ++
+        "      0 = Parse\n" ++
+        "      1 = Raw\n\n" ++
         Color.white.bold("Swap Languages:") ++ "\n" ++
         " /s\n\n" ++
         Color.white.bold("Quit:") ++ "\n" ++
