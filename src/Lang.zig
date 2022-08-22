@@ -6,7 +6,7 @@
 
 const std = @import("std");
 
-const Error = @import("Error.zig").Error;
+const Error = @import("error.zig").Error;
 
 const Lang = @This();
 

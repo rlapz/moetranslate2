@@ -9,7 +9,7 @@ const dprint = std.debug.print;
 
 const Color = @import("color.zig").Color;
 const config = @import("config.zig");
-const Error = @import("Error.zig").Error;
+const Error = @import("error.zig").Error;
 const Http = @import("Http.zig");
 const Lang = @import("Lang.zig");
 const url = @import("url.zig");

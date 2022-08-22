@@ -6,7 +6,7 @@
 
 const std = @import("std");
 const dprint = std.debug.print;
-const Error = @import("Error.zig").Error;
+const Error = @import("error.zig").Error;
 
 const Self = @This();
 

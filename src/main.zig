@@ -9,7 +9,7 @@ const dprint = std.debug.print;
 
 const config = @import("config.zig");
 const Moetranslate = @import("Moetranslate.zig");
-const Error = @import("Error.zig").Error;
+const Error = @import("error.zig").Error;
 const Lang = @import("Lang.zig");
 const url = @import("url.zig");
 const Color = @import("color.zig").Color;
