@@ -87,13 +87,25 @@ fn printInfoIntr(moe: *Moetranslate) void {
 }
 // zig fmt: on
 
-inline fn parseEnum(arg: []const u8) !u32 {
-    return std.fmt.parseUnsigned(
-        u32,
-        std.mem.trim(u8, arg, " "),
-        10,
-    ) catch {
+fn parseEnum(comptime T: type, arg: []const u8) !T {
+    const _arg = std.mem.trim(u8, arg, " ");
+    const num = std.fmt.parseUnsigned(u32, _arg, 10) catch {
         return Error.InvalidArgument;
+    };
+
+    return switch (T) {
+        Moetranslate.OutputMode => return switch (num) {
+            0 => .parse,
+            1 => .raw,
+            else => Error.InvalidArgument,
+        },
+        url.UrlBuildType => return switch (num) {
+            0 => .brief,
+            1 => .detail,
+            2 => .detect_lang,
+            else => Error.InvalidArgument,
+        },
+        else => Error.InvalidArgument,
     };
 }
 
@@ -168,11 +180,7 @@ fn getIntrResult(
             update_prompt.* = true;
         },
         'o' => {
-            const opt = try parseEnum(cmd[2..]);
-            if (opt > 1)
-                return Error.InvalidArgument;
-
-            moe.output_mode = @intToEnum(Moetranslate.OutputMode, opt);
+            moe.output_mode = try parseEnum(Moetranslate.OutputMode, cmd[2..]);
 
             try stdout.print(
                 Color.green.regular("Output mode: {s}") ++ "\n",
@@ -180,11 +188,7 @@ fn getIntrResult(
             );
         },
         'r' => {
-            const opt = try parseEnum(cmd[2..]);
-            if (opt > 2)
-                return Error.InvalidArgument;
-
-            moe.result_type = @intToEnum(url.UrlBuildType, opt);
+            moe.result_type = try parseEnum(url.UrlBuildType, cmd[2..]);
 
             try stderr.print(
                 Color.green.regular("Result type: {s}") ++ "\n",
