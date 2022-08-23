@@ -1,11 +1,6 @@
-// MIT License
-//
-// Copyright (c) 2022 Arthur Lapz (rLapz)
-//
-// See LICENSE file for license details
-
 const std = @import("std");
 const dprint = std.debug.print;
+
 const Error = @import("error.zig").Error;
 
 const Self = @This();

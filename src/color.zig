@@ -1,10 +1,5 @@
-// MIT License
-//
-// Copyright (c) 2022 Arthur Lapz (rLapz)
-//
-// See LICENSE file for license details
-
 const std = @import("std");
+
 const config = @import("config.zig");
 
 pub const Color = enum(u32) {

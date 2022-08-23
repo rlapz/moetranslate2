@@ -1,9 +1,3 @@
-// MIT License
-//
-// Copyright (c) 2022 Arthur Lapz (rLapz)
-//
-// See LICENSE file for license details
-
 const std = @import("std");
 
 pub fn skipHtmlTags(dest: []u8, src: []const u8) []const u8 {

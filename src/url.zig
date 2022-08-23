@@ -1,10 +1,5 @@
-// MIT License
-//
-// Copyright (c) 2022 Arthur Lapz (rLapz)
-//
-// See LICENSE file for license details
-
 const std = @import("std");
+
 const util = @import("util.zig");
 const Error = @import("error.zig").Error;
 
