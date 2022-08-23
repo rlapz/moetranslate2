@@ -10,8 +10,10 @@ const OutputMode = @import("Moetranslate.zig").OutputMode;
 const maxInt = @import("std").math.maxInt(u8);
 
 // see: `Lang.zig`
-pub const default_src_lang = "auto";
-pub const default_trg_lang = "en";
+pub const default_langs = .{
+    .src = "auto",
+    .trg = "en",
+};
 
 // Opts: .parse, .raw
 pub const default_output_mode: OutputMode = .parse;
@@ -23,6 +25,7 @@ pub const color = true;
 
 pub const separator = "-------------------------";
 pub const prompt = "->"; // Interactive
+//
 pub const synonym_max_lines: usize = maxInt;
 pub const definition_max_lines: usize = maxInt;
 pub const example_max_lines: usize = maxInt;

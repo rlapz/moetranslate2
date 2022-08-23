@@ -43,13 +43,15 @@ trg_lang   : *const Lang,
 text       : []const u8,
 
 pub inline fn init(allocator: std.mem.Allocator) !Self {
-    comptime var src_lang = Lang.getByKey(config.default_src_lang) catch |err| {
-        @compileError("config.zig: Unknown \"" ++ config.default_src_lang  ++
+    const lang = config.default_langs;
+
+    comptime var src_lang = Lang.getByKey(lang.src) catch |err| {
+        @compileError("config.zig: Unknown \"" ++ lang.src  ++
                       "\" language code: "     ++ @errorName(err) ++ "\n");
     };
 
-    comptime var trg_lang = Lang.getByKey(config.default_trg_lang) catch |err| {
-        @compileError("config.zig: Unknown \"" ++ config.default_trg_lang  ++
+    comptime var trg_lang = Lang.getByKey(lang.trg) catch |err| {
+        @compileError("config.zig: Unknown \"" ++ lang.trg  ++
                       "\" language code: "     ++ @errorName(err) ++ "\n");
     };
 
