@@ -40,7 +40,7 @@ pub const OutputMode = enum(u32) {
 
 // zig fmt: off
 allocator  : std.mem.Allocator,
-json_obj   : std.json.ValueTree,
+json_tree  : std.json.ValueTree,
 output_mode: OutputMode,
 result_type: url.UrlBuildType,
 langs      : Langs,
@@ -62,7 +62,7 @@ pub inline fn init(allocator: std.mem.Allocator) !Self {
 
     return Self{
         .allocator   = allocator,
-        .json_obj    = undefined,
+        .json_tree   = undefined,
         .output_mode = config.default_output_mode,
         .result_type = config.default_result_type,
         .langs       = langs,
@@ -116,8 +116,8 @@ fn print(self: *Self, json_str: []const u8) !void {
             var jsp = std.json.Parser.init(self.allocator, false);
             defer jsp.deinit();
 
-            self.json_obj = try jsp.parse(json_str);
-            defer self.json_obj.deinit();
+            self.json_tree = try jsp.parse(json_str);
+            defer self.json_tree.deinit();
 
             break :brk switch (self.result_type) {
                 .brief => self.printBrief(),
@@ -129,7 +129,7 @@ fn print(self: *Self, json_str: []const u8) !void {
 }
 
 fn printBrief(self: *Self) !void {
-    const jsn = self.json_obj.root.Array.items[0];
+    const jsn = self.json_tree.root.Array.items[0];
 
     if (jsn == .Array) {
         for (jsn.Array.items) |*v| {
@@ -167,7 +167,7 @@ fn printDetail(self: *Self) !void {
 
     defer stdout_buffered.flush() catch {};
 
-    const jsn     = self.json_obj.root.Array;
+    const jsn     = self.json_tree.root.Array;
     const trg_txt = jsn.items[0];
     const splls   = trg_txt.Array.items[trg_txt.Array.items.len - 1];
 
@@ -365,7 +365,7 @@ fn printDetail(self: *Self) !void {
 }
 
 fn printDetectLang(self: *Self) !void {
-    const jsn = self.json_obj.root.Array.items[2];
+    const jsn = self.json_tree.root.Array.items[2];
 
     if (jsn != .String)
         return;
