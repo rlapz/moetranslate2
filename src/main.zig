@@ -80,7 +80,7 @@ fn printInfoIntr(moe: *Moetranslate) void {
         Color.white.bold("Result type :") ++ " {s}\n" ++
         Color.white.bold("Output mode :") ++ " {s}\n" ++
         Color.white.bold("Show help   :") ++ " /h\n\n", .{
-            moe.src_lang.value,    moe.trg_lang.value,
+            moe.langs.src.value,    moe.langs.trg.value,
             moe.result_type.str(), moe.output_mode.str(),
         }
     ) catch {};
@@ -124,7 +124,7 @@ fn parseLang(moe: *Moetranslate, str: []const u8) !void {
 
     const _src = std.mem.trim(u8, str[0..sep], " ");
     if (_src.len > 0) {
-        moe.src_lang = Lang.getByKey(_src) catch |_err| {
+        moe.langs.src = Lang.getByKey(_src) catch |_err| {
             lang_err = _src;
             return _err;
         };
@@ -132,7 +132,7 @@ fn parseLang(moe: *Moetranslate, str: []const u8) !void {
 
     const _trg = std.mem.trim(u8, str[sep + 1 ..], " ");
     if (_trg.len > 0) {
-        moe.trg_lang = Lang.getByKey(_trg) catch |_err| {
+        moe.langs.trg = Lang.getByKey(_trg) catch |_err| {
             lang_err = _trg;
             return _err;
         };
@@ -176,7 +176,7 @@ fn getIntrResult(
             if (cmd.len != 2)
                 return Error.InvalidArgument;
 
-            std.mem.swap(*const Lang, &moe.src_lang, &moe.trg_lang);
+            std.mem.swap(*const Lang, &moe.langs.src, &moe.langs.trg);
             update_prompt.* = true;
         },
         'o' => {
@@ -210,8 +210,8 @@ fn inputIntr(moe: *Moetranslate) !void {
     while (is_running) {
         if (update_prompt) {
             prompt = std.fmt.bufPrintZ(&buffer, "[ {s}:{s} ]{s} ", .{
-                moe.src_lang.key,
-                moe.trg_lang.key,
+                moe.langs.src.key,
+                moe.langs.trg.key,
                 config.prompt,
             }) catch brk: {
                 break :brk "-> ";

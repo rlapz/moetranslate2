@@ -21,6 +21,11 @@ var stdout_buffered = std.io.bufferedWriter(stdout);
 const bstdout = stdout_buffered.writer();
 const Self = @This();
 
+pub const Langs = struct {
+    src: *const Lang,
+    trg: *const Lang,
+};
+
 pub const OutputMode = enum(u32) {
     parse,
     raw,
@@ -38,21 +43,20 @@ allocator  : std.mem.Allocator,
 json_obj   : std.json.ValueTree,
 output_mode: OutputMode,
 result_type: url.UrlBuildType,
-src_lang   : *const Lang,
-trg_lang   : *const Lang,
+langs      : Langs,
 text       : []const u8,
 
 pub inline fn init(allocator: std.mem.Allocator) !Self {
-    const lang = config.default_langs;
-
-    comptime var src_lang = Lang.getByKey(lang.src) catch |err| {
-        @compileError("config.zig: Unknown \"" ++ lang.src  ++
-                      "\" language code: "     ++ @errorName(err) ++ "\n");
-    };
-
-    comptime var trg_lang = Lang.getByKey(lang.trg) catch |err| {
-        @compileError("config.zig: Unknown \"" ++ lang.trg  ++
-                      "\" language code: "     ++ @errorName(err) ++ "\n");
+    const _langs = config.default_langs;
+    comptime var langs: Langs = .{
+        .src = Lang.getByKey(_langs.src) catch |err| {
+            @compileError("config.zig: Unknown \"" ++ _langs.src  ++
+                          "\" language code: "     ++ @errorName(err) ++ "\n");
+        },
+        .trg = Lang.getByKey(_langs.trg) catch |err| {
+            @compileError("config.zig: Unknown \"" ++ _langs.trg  ++
+                          "\" language code: "     ++ @errorName(err) ++ "\n");
+        },
     };
 
 
@@ -61,8 +65,7 @@ pub inline fn init(allocator: std.mem.Allocator) !Self {
         .json_obj    = undefined,
         .output_mode = config.default_output_mode,
         .result_type = config.default_result_type,
-        .src_lang    = src_lang,
-        .trg_lang    = trg_lang,
+        .langs       = langs,
         .text        = "",
     };
 }
@@ -89,8 +92,8 @@ pub fn run(self: *Self) !void {
         url.buildRequest(
             buffer,
             self.result_type,
-            self.src_lang.key,
-            self.trg_lang.key,
+            self.langs.src.key,
+            self.langs.trg.key,
             self.text,
         ) catch |err| switch (err) {
             Error.NoSpaceLeft => {
@@ -223,7 +226,7 @@ fn printDetail(self: *Self) !void {
     // Target lang
     try bstdout.print(
          Color.green.regular("[ {s} ]") ++ ": {s}\n",
-        .{ self.trg_lang.key, Lang.getLangStr(self.trg_lang.key) },
+        .{ self.langs.trg.key, Lang.getLangStr(self.langs.trg.key) },
     );
 
     // Synonyms
