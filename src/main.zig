@@ -2,13 +2,15 @@ const std = @import("std");
 const dprint = std.debug.print;
 
 const config = @import("config.zig");
+const getopt = @import("lib/getopt.zig");
 const Moetranslate = @import("Moetranslate.zig");
 const Error = @import("error.zig").Error;
 const Lang = @import("Lang.zig");
 const url = @import("url.zig");
 const Color = @import("color.zig").Color;
-
-const getopt = @import("lib/getopt.zig");
+const Langs = Moetranslate.Langs;
+const OutputMode = Moetranslate.OutputMode;
+const UrlBuildType = url.UrlBuildType;
 
 const c = @cImport({
     @cInclude("locale.h");
@@ -88,12 +90,12 @@ fn parseEnum(comptime T: type, arg: []const u8) !T {
     };
 
     return switch (T) {
-        Moetranslate.OutputMode => return switch (num) {
+        OutputMode => return switch (num) {
             0 => .parse,
             1 => .raw,
             else => Error.InvalidArgument,
         },
-        url.UrlBuildType => return switch (num) {
+        UrlBuildType => return switch (num) {
             0 => .brief,
             1 => .detail,
             2 => .detect_lang,
@@ -103,7 +105,7 @@ fn parseEnum(comptime T: type, arg: []const u8) !T {
     };
 }
 
-fn parseLang(moe: *Moetranslate, str: []const u8) !void {
+fn parseLang(langs: *Langs, str: []const u8) !void {
     const sep = std.mem.indexOfScalar(u8, str, ':') orelse {
         return Error.InvalidArgument;
     };
@@ -118,7 +120,7 @@ fn parseLang(moe: *Moetranslate, str: []const u8) !void {
 
     const _src = std.mem.trim(u8, str[0..sep], " ");
     if (_src.len > 0) {
-        moe.langs.src = Lang.getByKey(_src) catch |_err| {
+        langs.src = Lang.getByKey(_src) catch |_err| {
             lang_err = _src;
             return _err;
         };
@@ -126,7 +128,7 @@ fn parseLang(moe: *Moetranslate, str: []const u8) !void {
 
     const _trg = std.mem.trim(u8, str[sep + 1 ..], " ");
     if (_trg.len > 0) {
-        moe.langs.trg = Lang.getByKey(_trg) catch |_err| {
+        langs.trg = Lang.getByKey(_trg) catch |_err| {
             lang_err = _trg;
             return _err;
         };
@@ -164,7 +166,7 @@ fn getIntrResult(
         },
         'c' => {
             update_prompt.* = true;
-            return parseLang(moe, cmd[2..]);
+            return parseLang(&moe.langs, cmd[2..]);
         },
         's' => {
             if (cmd.len != 2)
@@ -174,7 +176,7 @@ fn getIntrResult(
             update_prompt.* = true;
         },
         'o' => {
-            moe.output_mode = try parseEnum(Moetranslate.OutputMode, cmd[2..]);
+            moe.output_mode = try parseEnum(OutputMode, cmd[2..]);
 
             try stdout.print(
                 Color.green.regular("Output mode: {s}") ++ "\n",
@@ -182,7 +184,7 @@ fn getIntrResult(
             );
         },
         'r' => {
-            moe.result_type = try parseEnum(url.UrlBuildType, cmd[2..]);
+            moe.result_type = try parseEnum(UrlBuildType, cmd[2..]);
 
             try stderr.print(
                 Color.green.regular("Result type: {s}") ++ "\n",
@@ -196,9 +198,8 @@ fn getIntrResult(
 fn inputIntr(moe: *Moetranslate) !void {
     var is_running: bool = true;
     var buffer: [16 + config.prompt.len]u8 = undefined;
-    var prompt: [:0]const u8 = undefined;
+    var prompt: [*c]const u8 = undefined;
     var update_prompt: bool = true;
-    var input_c: [*c]u8 = null;
 
     _ = c.setlocale(c.LC_CTYPE, "");
     while (is_running) {
@@ -214,15 +215,15 @@ fn inputIntr(moe: *Moetranslate) !void {
             update_prompt = false;
         }
 
-        stdout.writeAll(config.separator ++ "\n") catch {};
-        input_c = c.readline(prompt) orelse {
-            return stdout.writeByte('\n');
+        var input_c = c.readline(prompt) orelse {
+            try stdout.writeByte('\n');
+            return;
         };
 
         defer std.c.free(input_c);
 
         // If `input` is empty
-        if (input_c[0] == 0)
+        if (input_c[0] == '\x00')
             continue;
 
         _ = c.add_history(input_c);
@@ -234,6 +235,8 @@ fn inputIntr(moe: *Moetranslate) !void {
                 .{@errorName(err)},
             ) catch {};
         };
+
+        stdout.writeAll(config.separator ++ "\n") catch {};
     }
 }
 
@@ -260,11 +263,11 @@ pub fn main() !void {
         switch (opts.opt) {
             'b' => {
                 moe.result_type = .brief;
-                try parseLang(&moe, std.mem.span(argv[gopts.optind - 1]));
+                try parseLang(&moe.langs, std.mem.span(argv[gopts.optind - 1]));
             },
             'f' => {
                 moe.result_type = .detail;
-                try parseLang(&moe, std.mem.span(argv[gopts.optind - 1]));
+                try parseLang(&moe.langs, std.mem.span(argv[gopts.optind - 1]));
             },
             'd' => moe.result_type = .detect_lang,
             'r' => moe.output_mode = .raw,
@@ -297,6 +300,7 @@ pub fn main() !void {
         if (moe.text.len == 0)
             printInfoIntr(&moe);
 
+        stdout.writeAll(config.separator ++ "\n") catch {};
         return inputIntr(&moe);
     }
 }

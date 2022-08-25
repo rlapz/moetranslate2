@@ -272,12 +272,14 @@ fn printDetail(self: *Self) !void {
             }
             try bstdout.writeByte('\n');
         }
+    } else {
+            try bstdout.writeByte('\n');
     }
 
     // Definitions
     const defs = jsn.items[12];
     if (defs == .Array) {
-        try bstdout.writeAll("\n\n" ++ config.separator);
+        try bstdout.writeAll("\n" ++ config.separator);
 
         for (defs.Array.items) |*v| {
             if (v.Array.items[0].String.len == 0) {
@@ -333,12 +335,14 @@ fn printDetail(self: *Self) !void {
             }
             try bstdout.writeByte('\n');
         }
+    } else {
+            try bstdout.writeByte('\n');
     }
 
     // Examples
     const exmpls = jsn.items[13];
     if (exmpls == .Array) {
-        try bstdout.writeAll("\n\n" ++ config.separator ++ "\n");
+        try bstdout.writeAll("\n" ++ config.separator ++ "\n");
 
         var tmp: [256]u8 = undefined;
 
@@ -355,6 +359,8 @@ fn printDetail(self: *Self) !void {
             }
             try bstdout.writeByte('\n');
         }
+    } else {
+            try bstdout.writeByte('\n');
     }
 }
 
