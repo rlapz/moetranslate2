@@ -19,7 +19,7 @@ const detail     = "&dt=bd&dt=ex&dt=ld&dt=md&dt=rw&dt=rm&dt=ss&dt=" ++
 const det_lang   = "";
 // zig fmt: on
 
-pub const UrlBuildType = enum(u32) {
+pub const UrlBuildType = enum {
     brief,
     detail,
     detect_lang,

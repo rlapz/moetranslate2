@@ -20,7 +20,7 @@ pub const Langs = struct {
     trg: *const Lang,
 };
 
-pub const OutputMode = enum(u32) {
+pub const OutputMode = enum {
     parse,
     raw,
 
