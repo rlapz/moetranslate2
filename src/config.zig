@@ -20,8 +20,8 @@ pub const color = true;
 pub const separator = "-------------------------";
 pub const prompt = "->"; // Interactive
 //
-pub const synonym_max_lines: usize = maxInt;
-pub const definition_max_lines: usize = maxInt;
-pub const example_max_lines: usize = maxInt;
-pub const text_max_length: usize = 4096;
-pub const buffer_max_length: usize = 1024 * 512; // 512k
+pub const synonym_max_lines = maxInt;
+pub const definition_max_lines = maxInt;
+pub const example_max_lines = maxInt;
+pub const text_max_length = 4096;
+pub const buffer_max_length = 1024 * 512; // 512k
