@@ -235,7 +235,7 @@ fn printDetail(self: *Self) !void {
                 // In some cases, there's no label at all.
                 // I think for the sake of beauty we should give a label,
                 // instead of printing an empty string.
-                try bstdout.writeAll(
+                try bstdout.writeAll(comptime
                     "\n" ++ Color.blue.bold("[ + ]"),
                 );
             } else {
@@ -284,7 +284,7 @@ fn printDetail(self: *Self) !void {
         for (defs.Array.items) |*v| {
             if (v.Array.items[0].String.len == 0) {
                 // No label
-                try bstdout.writeAll(
+                try bstdout.writeAll(comptime
                     "\n" ++ Color.yellow.bold("[ + ]"),
                 );
             } else {

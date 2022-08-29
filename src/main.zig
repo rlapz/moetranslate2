@@ -198,7 +198,7 @@ fn getIntrResult(
 fn inputIntr(moe: *Moetranslate) !void {
     var is_running: bool = true;
     var buffer: [16 + config.prompt.len]u8 = undefined;
-    var prompt: [*c]const u8 = undefined;
+    var prompt: [*:0]const u8 = undefined;
     var update_prompt: bool = true;
 
     _ = c.setlocale(c.LC_CTYPE, "");
