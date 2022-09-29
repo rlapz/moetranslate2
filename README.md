@@ -15,6 +15,14 @@ libedit (https://thrysoee.dk/editline/)
 
 ## How to Install:
 
+Git clone:
+
+```
+git clone https://github.com/rlapz/moetranslate2 --recursive
+```
+
+Zig version: 0.9.1
+
 ```
 zig build -Drelease-safe -p /usr
 
