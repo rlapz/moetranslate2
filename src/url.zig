@@ -59,7 +59,7 @@ pub fn buildRequest(
     };
 
     const text_enc = try encode(buffer[ret.len..], text);
-    var len = ret.len + text_enc.len;
+    const len = ret.len + text_enc.len;
 
     ret = try std.fmt.bufPrint(
         buffer[len..],

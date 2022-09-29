@@ -40,7 +40,7 @@ result_type: url.UrlBuildType,
 langs      : Langs,
 text       : []const u8,
 
-pub inline fn init(allocator: std.mem.Allocator) !Self {
+pub fn init(allocator: std.mem.Allocator) !Self {
     const _langs = config.default_langs;
     comptime var langs: Langs = .{
         .src = Lang.getByKey(_langs.src) catch |err| {
@@ -161,9 +161,9 @@ fn printDetail(self: *Self) !void {
 
     defer stdout_buffered.flush() catch {};
 
-    const jsn     = self.json_tree.root.Array;
-    const trg_txt = jsn.items[0];
-    const splls   = trg_txt.Array.items[trg_txt.Array.items.len - 1];
+    const jsn     = &self.json_tree.root.Array;
+    const trg_txt = &jsn.items[0];
+    const splls   = &trg_txt.Array.items[trg_txt.Array.items.len - 1];
 
     // Source text
     try bstdout.print("\"{s}\"\n", .{self.text});

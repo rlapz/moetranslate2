@@ -11,7 +11,7 @@ stream   : std.net.Stream,
 buffer   : ?[]u8,
 // zig fmt: on
 
-pub inline fn init(
+pub fn init(
     allocator: std.mem.Allocator,
     host: []const u8,
     port: u16,
@@ -27,7 +27,7 @@ pub inline fn init(
     };
 }
 
-pub inline fn deinit(self: *Self) void {
+pub fn deinit(self: *Self) void {
     self.stream.close();
     if (self.buffer != null)
         self.allocator.free(self.buffer.?);
