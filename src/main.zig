@@ -2,7 +2,7 @@ const std = @import("std");
 const dprint = std.debug.print;
 
 const config = @import("config.zig");
-const getopt = @import("lib/getopt.zig");
+const getopt = @import("getopt");
 const Moetranslate = @import("Moetranslate.zig");
 const Error = @import("error.zig").Error;
 const Lang = @import("Lang.zig");

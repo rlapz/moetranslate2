@@ -1,0 +1,3 @@
+[submodule "zig-getopt"]
+	path = zig-getopt
+	url = https://github.com/dmgk/zig-getopt
