@@ -1,11 +1,12 @@
 const std = @import("std");
 const dprint = std.debug.print;
 
-const Color = @import("color.zig").Color;
-const config = @import("config.zig");
-const Error = @import("error.zig").Error;
 const Http = @import("Http.zig");
 const Lang = @import("Lang.zig");
+const Color = @import("color.zig").Color;
+const Error = @import("error.zig").Error;
+
+const config = @import("config.zig");
 const url = @import("url.zig");
 const util = @import("util.zig");
 
@@ -13,6 +14,7 @@ const stdout = std.io.getStdOut().writer();
 const stderr = std.io.getStdErr().writer();
 var stdout_buffered = std.io.bufferedWriter(stdout);
 const bstdout = stdout_buffered.writer();
+
 const Self = @This();
 
 pub const Langs = struct {
@@ -148,7 +150,7 @@ fn printDetail(self: *Self) !void {
     //     |
     // target text
     //     |
-    // target speling
+    // target spelling
     //     |
     // target lang
     //     |

@@ -1,16 +1,17 @@
 const std = @import("std");
 const dprint = std.debug.print;
 
-const config = @import("config.zig");
-const getopt = @import("getopt");
 const Moetranslate = @import("Moetranslate.zig");
-const Error = @import("error.zig").Error;
 const Lang = @import("Lang.zig");
-const url = @import("url.zig");
 const Color = @import("color.zig").Color;
+const Error = @import("error.zig").Error;
 const Langs = Moetranslate.Langs;
 const OutputMode = Moetranslate.OutputMode;
 const UrlBuildType = url.UrlBuildType;
+
+const config = @import("config.zig");
+const getopt = @import("getopt");
+const url = @import("url.zig");
 
 const c = @cImport({
     @cInclude("locale.h");

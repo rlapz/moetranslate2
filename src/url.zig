@@ -1,7 +1,7 @@
 const std = @import("std");
 
-const util = @import("util.zig");
 const Error = @import("error.zig").Error;
+const util = @import("util.zig");
 
 // zig fmt: off
 pub const host   = "translate.googleapis.com";

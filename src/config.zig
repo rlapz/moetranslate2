@@ -1,6 +1,4 @@
 const builtin = @import("builtin");
-const UrlBuildType = @import("url.zig").UrlBuildType;
-const OutputMode = @import("Moetranslate.zig").OutputMode;
 const maxInt = @import("std").math.maxInt(u8);
 
 // see: `Lang.zig`
@@ -10,9 +8,9 @@ pub const default_langs = .{
 };
 
 // Opts: .parse, .raw
-pub const default_output_mode: OutputMode = .parse;
+pub const default_output_mode = .parse;
 // Opts: .detail, .brief, .detect_lang
-pub const default_result_type: UrlBuildType = .detail;
+pub const default_result_type = .detail;
 
 // use color?
 pub const color = true;
