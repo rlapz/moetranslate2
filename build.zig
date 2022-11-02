@@ -9,10 +9,10 @@ pub fn build(b: *std.build.Builder) void {
     exe.addPackage(.{
         .name = "getopt",
         // zig version: 0.9.x
-        .path = .{ .path = "./zig-getopt/getopt.zig" },
+        //.path = .{ .path = "./zig-getopt/getopt.zig" },
 
-        // zig version: 0.10.0-dev (master)
-        //.source = .{ .path = "./zig-getopt/getopt.zig" },
+        // zig version: 0.10.x
+        .source = .{ .path = "./zig-getopt/getopt.zig" },
     });
     exe.linkSystemLibraryName("edit");
     exe.linkLibC();

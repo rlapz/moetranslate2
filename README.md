@@ -21,7 +21,7 @@ Git clone:
 git clone https://github.com/rlapz/moetranslate2 --recursive
 ```
 
-Zig version: 0.9.1
+Zig version: 0.10.x
 
 ```
 zig build -Drelease-safe -p /usr
