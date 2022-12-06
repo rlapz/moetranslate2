@@ -8,15 +8,12 @@ pub fn build(b: *std.build.Builder) void {
     exe.build_mode = b.standardReleaseOptions();
     exe.addPackage(.{
         .name = "getopt",
-        // zig version: 0.9.x
-        //.path = .{ .path = "./zig-getopt/getopt.zig" },
-
-        // zig version: 0.10.x
         .source = .{ .path = "./zig-getopt/getopt.zig" },
     });
-    exe.linkSystemLibraryName("edit");
-    exe.linkLibC();
-
+    exe.addPackage(.{
+        .name = "linenoize",
+        .source = .{ .path = "./lib/linenoize/src/main.zig" },
+    });
     exe.install();
 
     const run_cmd = exe.run();

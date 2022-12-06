@@ -1,3 +1,6 @@
 [submodule "zig-getopt"]
 	path = zig-getopt
 	url = https://github.com/dmgk/zig-getopt
+[submodule "lib/linenoize"]
+	path = lib/linenoize
+	url = https://github.com/joachimschmidt557/linenoize

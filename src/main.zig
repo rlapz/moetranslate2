@@ -1,5 +1,7 @@
 const std = @import("std");
 const dprint = std.debug.print;
+const getopt = @import("getopt");
+const Linenoise = @import("linenoize").Linenoise;
 
 const Moetranslate = @import("Moetranslate.zig");
 const Lang = @import("Lang.zig");
@@ -10,13 +12,7 @@ const OutputMode = Moetranslate.OutputMode;
 const UrlBuildType = url.UrlBuildType;
 
 const config = @import("config.zig");
-const getopt = @import("getopt");
 const url = @import("url.zig");
-
-const c = @cImport({
-    @cInclude("locale.h");
-    @cInclude("editline/readline.h");
-});
 
 const stdout = std.io.getStdOut().writer();
 const stderr = std.io.getStdErr().writer();
@@ -143,7 +139,6 @@ fn getIntrResult(
 ) !void {
     var cmd = moe.text;
     if (cmd[0] != '/') {
-        g_fba.reset();
         stdout.writeAll(config.separator ++ "\n") catch {};
 
         // Let's GO!
@@ -196,16 +191,17 @@ fn getIntrResult(
     }
 }
 
-fn inputIntr(moe: *Moetranslate) !void {
+fn inputIntr(allocator: std.mem.Allocator, moe: *Moetranslate) !void {
     var is_running: bool = true;
     var buffer: [16 + config.prompt.len]u8 = undefined;
-    var prompt: [*:0]const u8 = undefined;
+    var prompt: []const u8 = undefined;
     var update_prompt: bool = true;
+    var line = Linenoise.init(allocator);
+    defer line.deinit();
 
-    _ = c.setlocale(c.LC_CTYPE, "");
     while (is_running) {
         if (update_prompt) {
-            prompt = std.fmt.bufPrintZ(&buffer, "[ {s}:{s} ]{s} ", .{
+            prompt = std.fmt.bufPrint(&buffer, "[ {s}:{s} ]{s} ", .{
                 moe.langs.src.key,
                 moe.langs.trg.key,
                 config.prompt,
@@ -216,20 +212,21 @@ fn inputIntr(moe: *Moetranslate) !void {
             update_prompt = false;
         }
 
-        var input_c = c.readline(prompt) orelse {
+        var prepare_input = line.linenoise(prompt) catch return;
+        var input = prepare_input orelse {
             try stdout.writeByte('\n');
             return;
         };
 
-        defer std.c.free(input_c);
+        defer allocator.free(input);
 
         // If `input` is empty
-        if (input_c[0] == '\x00')
+        if (input.len == 0)
             continue;
 
-        _ = c.add_history(input_c);
-        moe.text = std.mem.span(input_c);
+        try line.history.add(input);
 
+        moe.text = input;
         getIntrResult(moe, &is_running, &update_prompt) catch |err| {
             stderr.print(
                 Color.yellow.regular("Error: {s}") ++ "\n",
@@ -251,7 +248,7 @@ pub fn main() !void {
         return Error.InvalidArgument;
     }
 
-    var real_buffer: [config.buffer_max_length]u8 align(@alignOf(u64)) = undefined;
+    var real_buffer: [config.buffer_max_length]u8 = undefined;
     var fba = std.heap.FixedBufferAllocator.init(&real_buffer);
     g_fba = &fba;
 
@@ -302,6 +299,6 @@ pub fn main() !void {
             printInfoIntr(&moe);
 
         stdout.writeAll(config.separator ++ "\n") catch {};
-        return inputIntr(&moe);
+        return inputIntr(fba.allocator(), &moe);
     }
 }
