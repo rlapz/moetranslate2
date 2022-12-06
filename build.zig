@@ -8,7 +8,7 @@ pub fn build(b: *std.build.Builder) void {
     exe.build_mode = b.standardReleaseOptions();
     exe.addPackage(.{
         .name = "getopt",
-        .source = .{ .path = "./zig-getopt/getopt.zig" },
+        .source = .{ .path = "./lib/zig-getopt/getopt.zig" },
     });
     exe.addPackage(.{
         .name = "linenoize",
