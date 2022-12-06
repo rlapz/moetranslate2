@@ -1,14 +1,12 @@
 const std = @import("std");
 const dprint = std.debug.print;
 
-const Error = @import("error.zig").Error;
-
 const Self = @This();
 
 // zig fmt: off
 allocator: std.mem.Allocator,
 stream   : std.net.Stream,
-buffer   : ?[]u8,
+buffer   : []u8,
 // zig fmt: on
 
 pub fn init(
@@ -23,14 +21,13 @@ pub fn init(
             host,
             port,
         ),
-        .buffer = null,
+        .buffer = undefined,
     };
 }
 
 pub fn deinit(self: *Self) void {
     self.stream.close();
-    if (self.buffer != null)
-        self.allocator.free(self.buffer.?);
+    self.allocator.free(self.buffer);
 }
 
 pub inline fn sendRequest(self: *Self, req: []const u8) !void {
@@ -39,23 +36,22 @@ pub inline fn sendRequest(self: *Self, req: []const u8) !void {
 
 pub fn getJson(self: *Self) ![]u8 {
     var bf = try self.stream.reader().readAllAlloc(self.allocator, 1024 * 64);
-
     self.buffer = bf;
 
     if (std.mem.indexOf(u8, bf, "200 OK") == null)
-        return Error.InvalidResponse;
+        return error.InvalidResponse;
 
     // Skipping http header...
     const end_h = std.mem.indexOf(u8, bf, "\r\n\r\n") orelse {
-        return Error.InvalidJSON;
+        return error.InvalidJSON;
     };
 
     bf = bf[end_h + 4 ..];
     const st = std.mem.indexOf(u8, bf, "[") orelse {
-        return Error.InvalidJSON;
+        return error.InvalidJSON;
     };
     const ed = std.mem.lastIndexOf(u8, bf, "]") orelse {
-        return Error.InvalidJSON;
+        return error.InvalidJSON;
     };
 
     return bf[st .. ed + 1];

@@ -1,7 +1,5 @@
 const std = @import("std");
 
-const Error = @import("error.zig").Error;
-
 const Lang = @This();
 
 // zig fmt: off
@@ -124,13 +122,13 @@ const langs = [_]Lang{
 // zig fmt: on
 
 // Will return the reference
-pub fn getByKey(key: []const u8) Error!*const Lang {
+pub fn getByKey(key: []const u8) !*const Lang {
     inline for (langs) |*val| {
         if (std.ascii.eqlIgnoreCase(val.key, key))
             return val;
     }
 
-    return Error.LangNotFound;
+    return error.LangNotFound;
 }
 
 // When the desired language cannot be found

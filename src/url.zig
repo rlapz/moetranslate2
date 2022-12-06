@@ -1,6 +1,5 @@
 const std = @import("std");
 
-const Error = @import("error.zig").Error;
 const util = @import("util.zig");
 
 // zig fmt: off
@@ -39,7 +38,7 @@ pub fn buildRequest(
     src_lang: []const u8,
     trg_lang: []const u8,
     text: []const u8,
-) Error![]const u8 {
+) ![]const u8 {
     var ret = switch (url_type) {
         .brief => try std.fmt.bufPrint(
             buffer,
@@ -93,7 +92,7 @@ fn encode(dest: []u8, src: []const u8) ![]const u8 {
     }
 
     if (count < src.len)
-        return Error.NoSpaceLeft;
+        return error.NoSpaceLeft;
 
     return dest[0..count];
 }

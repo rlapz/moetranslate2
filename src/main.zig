@@ -6,7 +6,6 @@ const Linenoise = @import("linenoize").Linenoise;
 const Moetranslate = @import("Moetranslate.zig");
 const Lang = @import("Lang.zig");
 const Color = @import("color.zig").Color;
-const Error = @import("error.zig").Error;
 const Langs = Moetranslate.Langs;
 const OutputMode = Moetranslate.OutputMode;
 const UrlBuildType = url.UrlBuildType;
@@ -16,7 +15,6 @@ const url = @import("url.zig");
 
 const stdout = std.io.getStdOut().writer();
 const stderr = std.io.getStdErr().writer();
-var g_fba: *std.heap.FixedBufferAllocator = undefined;
 
 // zig fmt: off
 fn printHelp() void {
@@ -83,28 +81,28 @@ fn printInfoIntr(moe: *Moetranslate) void {
 fn parseEnum(comptime T: type, arg: []const u8) !T {
     const _arg = std.mem.trim(u8, arg, " ");
     const num = std.fmt.parseUnsigned(u32, _arg, 10) catch {
-        return Error.InvalidArgument;
+        return error.InvalidArgument;
     };
 
     return switch (T) {
         OutputMode => return switch (num) {
             0 => .parse,
             1 => .raw,
-            else => Error.InvalidArgument,
+            else => error.InvalidArgument,
         },
         UrlBuildType => return switch (num) {
             0 => .brief,
             1 => .detail,
             2 => .detect_lang,
-            else => Error.InvalidArgument,
+            else => error.InvalidArgument,
         },
-        else => Error.InvalidArgument,
+        else => error.InvalidArgument,
     };
 }
 
 fn parseLang(langs: *Langs, str: []const u8) !void {
     const sep = std.mem.indexOfScalar(u8, str, ':') orelse {
-        return Error.InvalidArgument;
+        return error.InvalidArgument;
     };
     var lang_err: []const u8 = undefined;
 
@@ -156,7 +154,7 @@ fn getIntrResult(
         },
         'h' => {
             if (cmd.len != 2)
-                return Error.InvalidArgument;
+                return error.InvalidArgument;
 
             return printHelpIntr();
         },
@@ -166,7 +164,7 @@ fn getIntrResult(
         },
         's' => {
             if (cmd.len != 2)
-                return Error.InvalidArgument;
+                return error.InvalidArgument;
 
             std.mem.swap(*const Lang, &moe.langs.src, &moe.langs.trg);
             update_prompt.* = true;
@@ -187,13 +185,15 @@ fn getIntrResult(
                 .{moe.result_type.str()},
             );
         },
-        else => return Error.InvalidArgument,
+        else => return error.InvalidArgument,
     }
 }
 
 fn inputIntr(allocator: std.mem.Allocator, moe: *Moetranslate) !void {
     var is_running: bool = true;
-    var buffer: [16 + config.prompt.len]u8 = undefined;
+    var buffer = try allocator.alloc(u8, 16 + config.prompt.len);
+    defer allocator.free(buffer);
+
     var prompt: []const u8 = undefined;
     var update_prompt: bool = true;
     var line = Linenoise.init(allocator);
@@ -201,7 +201,7 @@ fn inputIntr(allocator: std.mem.Allocator, moe: *Moetranslate) !void {
 
     while (is_running) {
         if (update_prompt) {
-            prompt = std.fmt.bufPrint(&buffer, "[ {s}:{s} ]{s} ", .{
+            prompt = std.fmt.bufPrint(buffer, "[ {s}:{s} ]{s} ", .{
                 moe.langs.src.key,
                 moe.langs.trg.key,
                 config.prompt,
@@ -245,14 +245,13 @@ pub fn main() !void {
 
     if (gopts.argv.len == 1) {
         printHelp();
-        return Error.InvalidArgument;
+        return error.InvalidArgument;
     }
 
     var real_buffer: [config.buffer_max_length]u8 = undefined;
     var fba = std.heap.FixedBufferAllocator.init(&real_buffer);
-    g_fba = &fba;
-
-    var moe = try Moetranslate.init(fba.allocator());
+    const allocator = fba.allocator();
+    var moe = try Moetranslate.init(allocator);
 
     while (true) {
         argv = gopts.argv;
@@ -271,7 +270,7 @@ pub fn main() !void {
             'r' => moe.output_mode = .raw,
             'i' => is_intrc = true,
             'h' => return printHelp(),
-            else => return Error.InvalidArgument,
+            else => return error.InvalidArgument,
         }
     }
 
@@ -299,6 +298,6 @@ pub fn main() !void {
             printInfoIntr(&moe);
 
         stdout.writeAll(config.separator ++ "\n") catch {};
-        return inputIntr(fba.allocator(), &moe);
+        return inputIntr(allocator, &moe);
     }
 }

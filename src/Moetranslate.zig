@@ -4,7 +4,6 @@ const dprint = std.debug.print;
 const Http = @import("Http.zig");
 const Lang = @import("Lang.zig");
 const Color = @import("color.zig").Color;
-const Error = @import("error.zig").Error;
 
 const config = @import("config.zig");
 const url = @import("url.zig");
@@ -72,18 +71,19 @@ pub fn run(self: *Self) !void {
 
     if (self.text.len == 0) {
         try stderr.writeAll("The text is empty!\n");
-        return Error.InvalidArgument;
+        return error.InvalidArgument;
     }
 
     if (self.text.len >= config.text_max_length) {
         try stderr.print("The text is too long!: {}\n", .{self.text.len});
-        return Error.NoSpaceLeft;
+        return error.NoSpaceLeft;
     }
 
     var http = try Http.init(self.allocator, url.host, url.port);
     defer http.deinit();
 
-    var buffer = try self.allocator.alloc(u8, (config.text_max_length * 3) + 128);
+    const buffer_size = (config.text_max_length * 3) + 128;
+    var buffer = try self.allocator.alloc(u8, buffer_size);
     try http.sendRequest(
         url.buildRequest(
             buffer,
@@ -92,7 +92,7 @@ pub fn run(self: *Self) !void {
             self.langs.trg.key,
             self.text,
         ) catch |err| switch (err) {
-            Error.NoSpaceLeft => {
+            error.NoSpaceLeft => {
                 try stderr.writeAll("The text is too long!\n");
                 return err;
             },
@@ -101,7 +101,6 @@ pub fn run(self: *Self) !void {
     );
 
     self.allocator.free(buffer);
-
     try self.print(try http.getJson());
 }
 
