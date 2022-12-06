@@ -7,18 +7,12 @@ A beautiful and simple language translator written in Zig
 ## Currently Supported:
 1. Google Translate API
 
-## Required Package(s):
-
-```
-libedit (https://thrysoee.dk/editline/)
-```
-
 ## How to Install:
 
 Git clone:
 
 ```
-git clone https://github.com/rlapz/moetranslate2 --recursive
+git clone https://github.com/rlapz/moetranslate2 --recursive --depth 1
 ```
 
 Zig version: 0.10.x
