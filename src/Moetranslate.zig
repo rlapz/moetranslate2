@@ -227,7 +227,7 @@ fn printDetail(self: *Self) !void {
     // Synonyms
     const synms = jsn.items[1];
     if (synms == .Array) {
-        try bstdout.writeAll("\n\n" ++ config.separator);
+        try bstdout.writeAll("\n" ++ config.separator);
 
         for (synms.Array.items) |*v| {
             // Verb, Nouns, etc
@@ -273,8 +273,6 @@ fn printDetail(self: *Self) !void {
             }
             try bstdout.writeByte('\n');
         }
-    } else {
-            try bstdout.writeByte('\n');
     }
 
     // Definitions
@@ -336,8 +334,6 @@ fn printDetail(self: *Self) !void {
             }
             try bstdout.writeByte('\n');
         }
-    } else {
-            try bstdout.writeByte('\n');
     }
 
     // Examples
@@ -358,10 +354,7 @@ fn printDetail(self: *Self) !void {
                     .{ ii + 1, std.ascii.toUpper(vex[0]), vex[1..] },
                 );
             }
-            try bstdout.writeByte('\n');
         }
-    } else {
-            try bstdout.writeByte('\n');
     }
 }
 
