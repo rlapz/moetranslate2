@@ -4,7 +4,7 @@ const util = @import("util.zig");
 
 // zig fmt: off
 pub const host   = "translate.googleapis.com";
-pub const port   = @as(u16, 80);
+pub const port   = 80;
 
 const method     = "GET";
 const protocol   = "HTTP/1.1";
@@ -32,67 +32,50 @@ pub const UrlBuildType = enum {
     }
 };
 
+const String = std.ArrayList(u8);
+const StringWriter = String.Writer;
+
+// Caller owns returned memory
 pub fn buildRequest(
-    buffer: []u8,
+    allocator: std.mem.Allocator,
+    init_capacity: usize,
     url_type: UrlBuildType,
     src_lang: []const u8,
     trg_lang: []const u8,
     text: []const u8,
-) ![]const u8 {
-    var ret = switch (url_type) {
-        .brief => try std.fmt.bufPrint(
-            buffer,
+) ![]u8 {
+    var buffer = try String.initCapacity(allocator, init_capacity);
+    defer buffer.deinit();
+
+    const wr = buffer.writer();
+    switch (url_type) {
+        .brief => try wr.print(
             "{s} {s}" ++ brief ++ "&sl={s}&tl={s}&q=",
             .{ method, query, src_lang, trg_lang },
         ),
-        .detail => try std.fmt.bufPrint(
-            buffer,
+        .detail => try wr.print(
             "{s} {s}" ++ detail ++ "&sl={s}&tl={s}&hl={s}&q=",
             .{ method, query, src_lang, trg_lang, trg_lang },
         ),
-        .detect_lang => try std.fmt.bufPrint(
-            buffer,
+        .detect_lang => try wr.print(
             "{s} {s}" ++ det_lang ++ "&sl={s}&q=",
             .{ method, query, "auto" },
         ),
-    };
+    }
 
-    const text_enc = try encode(buffer[ret.len..], text);
-    const len = ret.len + text_enc.len;
+    // encode
+    const hex = "0123456789abcdef";
+    for (text) |v| {
+        if (!std.ascii.isAlNum(v))
+            try wr.print("%{c}{c}", .{ hex[(v >> 4) & 15], hex[v & 15] })
+        else
+            try wr.writeByte(v);
+    }
 
-    ret = try std.fmt.bufPrint(
-        buffer[len..],
+    try wr.print(
         " {s}\r\nHost: {s}\r\nUser-Agent: {s}\r\nConnection: {s}\r\n\r\n",
         .{ protocol, host, user_agent, connection },
     );
 
-    return buffer[0 .. len + ret.len];
-}
-
-fn encode(dest: []u8, src: []const u8) ![]const u8 {
-    const hex = "0123456789abcdef";
-    var count: usize = 0;
-
-    for (src) |v| {
-        if (count + 3 >= dest.len)
-            break;
-
-        if (!std.ascii.isAlNum(v)) {
-            dest[count] = '%';
-            dest[count + 1] = hex[(v >> 4) & 15];
-            dest[count + 2] = hex[v & 15];
-
-            count += 3;
-
-            continue;
-        }
-
-        dest[count] = v;
-        count += 1;
-    }
-
-    if (count < src.len)
-        return error.NoSpaceLeft;
-
-    return dest[0..count];
+    return buffer.toOwnedSlice();
 }

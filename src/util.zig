@@ -1,4 +1,5 @@
 const std = @import("std");
+const mem = std.mem;
 
 pub fn skipHtmlTags(dest: []u8, src: []const u8) []const u8 {
     const tables = [_][2][]const u8{
@@ -9,10 +10,10 @@ pub fn skipHtmlTags(dest: []u8, src: []const u8) []const u8 {
     var _src = src;
     var ret = dest;
     for (tables) |*tag| {
-        const op = std.mem.replace(u8, _src, tag[0], "", dest);
+        const op = mem.replace(u8, _src, tag[0], "", dest);
         ret = dest[0 .. _src.len - (op * tag[0].len)];
 
-        const cl = std.mem.replace(u8, ret, tag[1], "", ret);
+        const cl = mem.replace(u8, ret, tag[1], "", ret);
         ret = dest[0 .. ret.len - (cl * tag[1].len)];
         _src = ret;
     }

@@ -1,4 +1,7 @@
 const std = @import("std");
+const fmt = std.fmt;
+const io = std.io;
+const mem = std.mem;
 const dprint = std.debug.print;
 const getopt = @import("getopt");
 const Linenoise = @import("linenoize").Linenoise;
@@ -15,6 +18,14 @@ const url = @import("url.zig");
 
 const stdout = std.io.getStdOut().writer();
 const stderr = std.io.getStdErr().writer();
+
+fn printErr(comptime c: Color, comptime _fmt: []const u8, args: anytype) void {
+    stderr.print(c.regular(_fmt) ++ "\n", args) catch {};
+}
+
+fn printOut(comptime c: Color, comptime _fmt: []const u8, args: anytype) void {
+    stdout.print(c.regular(_fmt) ++ "\n", args) catch {};
+}
 
 // zig fmt: off
 fn printHelp() void {
@@ -79,8 +90,8 @@ fn printInfoIntr(moe: *Moetranslate) void {
 // zig fmt: on
 
 fn parseEnum(comptime T: type, arg: []const u8) !T {
-    const _arg = std.mem.trim(u8, arg, " ");
-    const num = std.fmt.parseUnsigned(u32, _arg, 10) catch {
+    const _arg = mem.trim(u8, arg, " ");
+    const num = fmt.parseUnsigned(u32, _arg, 10) catch {
         return error.InvalidArgument;
     };
 
@@ -101,30 +112,22 @@ fn parseEnum(comptime T: type, arg: []const u8) !T {
 }
 
 fn parseLang(langs: *Langs, str: []const u8) !void {
-    const sep = std.mem.indexOfScalar(u8, str, ':') orelse {
+    const sep = mem.indexOfScalar(u8, str, ':') orelse {
         return error.InvalidArgument;
     };
-    var lang_err: []const u8 = undefined;
 
-    errdefer {
-        stderr.print(
-            Color.yellow.regular("Unknown \"{s}\" language code") ++ "\n",
-            .{lang_err},
-        ) catch {};
-    }
-
-    const _src = std.mem.trim(u8, str[0..sep], " ");
+    const _src = mem.trim(u8, str[0..sep], " ");
     if (_src.len > 0) {
         langs.src = Lang.getByKey(_src) catch |_err| {
-            lang_err = _src;
+            printErr(.yellow, "Unknown \"{s}\" language code", .{_src});
             return _err;
         };
     }
 
-    const _trg = std.mem.trim(u8, str[sep + 1 ..], " ");
+    const _trg = mem.trim(u8, str[sep + 1 ..], " ");
     if (_trg.len > 0) {
         langs.trg = Lang.getByKey(_trg) catch |_err| {
-            lang_err = _trg;
+            printErr(.yellow, "Unknown \"{s}\" language code", .{_trg});
             return _err;
         };
     }
@@ -143,7 +146,7 @@ fn getIntrResult(
         return moe.run();
     }
 
-    cmd = std.mem.trim(u8, cmd, " ");
+    cmd = mem.trim(u8, cmd, " ");
 
     if (cmd.len == 1)
         return printInfoIntr(moe);
@@ -166,30 +169,22 @@ fn getIntrResult(
             if (cmd.len != 2)
                 return error.InvalidArgument;
 
-            std.mem.swap(*const Lang, &moe.langs.src, &moe.langs.trg);
+            mem.swap(*const Lang, &moe.langs.src, &moe.langs.trg);
             update_prompt.* = true;
         },
         'o' => {
             moe.output_mode = try parseEnum(OutputMode, cmd[2..]);
-
-            try stdout.print(
-                Color.green.regular("Output mode: {s}") ++ "\n",
-                .{moe.output_mode.str()},
-            );
+            printOut(.green, "Output mode: {s}", .{moe.output_mode.str()});
         },
         'r' => {
             moe.result_type = try parseEnum(UrlBuildType, cmd[2..]);
-
-            try stderr.print(
-                Color.green.regular("Result type: {s}") ++ "\n",
-                .{moe.result_type.str()},
-            );
+            printOut(.green, "Result type: {s}", .{moe.result_type.str()});
         },
         else => return error.InvalidArgument,
     }
 }
 
-fn inputIntr(allocator: std.mem.Allocator, moe: *Moetranslate) !void {
+fn inputIntr(allocator: mem.Allocator, moe: *Moetranslate) !void {
     var is_running: bool = true;
     var buffer = try allocator.alloc(u8, 16 + config.prompt.len);
     defer allocator.free(buffer);
@@ -201,7 +196,7 @@ fn inputIntr(allocator: std.mem.Allocator, moe: *Moetranslate) !void {
 
     while (is_running) {
         if (update_prompt) {
-            prompt = std.fmt.bufPrint(buffer, "[ {s}:{s} ]{s} ", .{
+            prompt = fmt.bufPrint(buffer, "[ {s}:{s} ]{s} ", .{
                 moe.langs.src.key,
                 moe.langs.trg.key,
                 config.prompt,
@@ -228,10 +223,7 @@ fn inputIntr(allocator: std.mem.Allocator, moe: *Moetranslate) !void {
 
         moe.text = input;
         getIntrResult(moe, &is_running, &update_prompt) catch |err| {
-            stderr.print(
-                Color.yellow.regular("Error: {s}") ++ "\n",
-                .{@errorName(err)},
-            ) catch {};
+            printErr(.yellow, "Error: {s}", .{@errorName(err)});
         };
 
         stdout.writeAll(config.separator ++ "\n") catch {};
@@ -260,11 +252,11 @@ pub fn main() !void {
         switch (opts.opt) {
             'b' => {
                 moe.result_type = .brief;
-                try parseLang(&moe.langs, std.mem.span(argv[gopts.optind - 1]));
+                try parseLang(&moe.langs, mem.span(argv[gopts.optind - 1]));
             },
             'f' => {
                 moe.result_type = .detail;
-                try parseLang(&moe.langs, std.mem.span(argv[gopts.optind - 1]));
+                try parseLang(&moe.langs, mem.span(argv[gopts.optind - 1]));
             },
             'd' => moe.result_type = .detect_lang,
             'r' => moe.output_mode = .raw,
@@ -276,11 +268,11 @@ pub fn main() !void {
 
     switch (moe.result_type) {
         .detect_lang => {
-            moe.text = std.mem.span(argv[gopts.optind - 1]);
+            moe.text = mem.span(argv[gopts.optind - 1]);
         },
         else => {
             if (gopts.optind < argv.len)
-                moe.text = std.mem.span(argv[gopts.optind]);
+                moe.text = mem.span(argv[gopts.optind]);
         },
     }
 
