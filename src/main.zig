@@ -7,7 +7,7 @@ const getopt = @import("getopt");
 const Linenoise = @import("linenoize").Linenoise;
 
 const Moetranslate = @import("Moetranslate.zig");
-const Lang = @import("Lang.zig");
+const lang = @import("lang.zig");
 const Color = @import("color.zig").Color;
 const Langs = Moetranslate.Langs;
 const OutputMode = Moetranslate.OutputMode;
@@ -82,7 +82,7 @@ fn printInfoIntr(moe: *Moetranslate) void {
         Color.white.bold("Result type :") ++ " {s}\n" ++
         Color.white.bold("Output mode :") ++ " {s}\n" ++
         Color.white.bold("Show help   :") ++ " /h\n\n", .{
-            moe.langs.src.value,    moe.langs.trg.value,
+            moe.langs.src,    moe.langs.trg,
             moe.result_type.str(), moe.output_mode.str(),
         }
     ) catch {};
@@ -116,18 +116,18 @@ fn parseLang(langs: *Langs, str: []const u8) !void {
         return error.InvalidArgument;
     };
 
-    const _src = mem.trim(u8, str[0..sep], " ");
-    if (_src.len > 0) {
-        langs.src = Lang.getByKey(_src) catch {
-            printErr("Unknown \"{s}\" language code", .{_src});
+    const src = mem.trim(u8, str[0..sep], " ");
+    if (src.len > 0) {
+        langs.src = lang.getKeySlice(src) orelse {
+            printErr("Unknown \"{s}\" language code", .{src});
             return;
         };
     }
 
-    const _trg = mem.trim(u8, str[sep + 1 ..], " ");
-    if (_trg.len > 0) {
-        langs.trg = Lang.getByKey(_trg) catch {
-            printErr("Unknown \"{s}\" language code", .{_trg});
+    const trg = mem.trim(u8, str[sep + 1 ..], " ");
+    if (trg.len > 0) {
+        langs.trg = lang.getKeySlice(trg) orelse {
+            printErr("Unknown \"{s}\" language code", .{trg});
             return;
         };
     }
@@ -169,7 +169,7 @@ fn getIntrResult(
             if (cmd.len != 2)
                 return error.InvalidArgument;
 
-            mem.swap(*const Lang, &moe.langs.src, &moe.langs.trg);
+            mem.swap([]const u8, &moe.langs.src, &moe.langs.trg);
             update_prompt.* = true;
         },
         'o' => {
@@ -197,8 +197,8 @@ fn inputIntr(allocator: mem.Allocator, moe: *Moetranslate) !void {
     while (is_running) {
         if (update_prompt) {
             prompt = fmt.bufPrint(buffer, "[ {s}:{s} ]{s} ", .{
-                moe.langs.src.key,
-                moe.langs.trg.key,
+                moe.langs.src,
+                moe.langs.trg,
                 config.prompt,
             }) catch brk: {
                 break :brk "-> ";

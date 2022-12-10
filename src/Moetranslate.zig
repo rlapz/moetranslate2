@@ -5,10 +5,10 @@ const mem = std.mem;
 const dprint = std.debug.print;
 
 const http = @import("http.zig");
-const Lang = @import("Lang.zig");
 const Color = @import("color.zig").Color;
 
 const config = @import("config.zig");
+const lang = @import("lang.zig");
 const url = @import("url.zig");
 const util = @import("util.zig");
 
@@ -18,8 +18,8 @@ const stderr = io.getStdErr().writer();
 const Self = @This();
 
 pub const Langs = struct {
-    src: *const Lang,
-    trg: *const Lang,
+    src: []const u8,
+    trg: []const u8,
 };
 
 pub const OutputMode = enum {
@@ -42,17 +42,15 @@ langs: Langs,
 text: []const u8,
 
 pub fn init(allocator: mem.Allocator) !Self {
-    const _langs = config.default_langs;
-    comptime var langs: Langs = .{
-        .src = Lang.getByKey(_langs.src) catch |err| {
-            @compileError("config.zig: Unknown \"" ++ _langs.src ++
-                "\" language code: " ++ @errorName(err) ++ "\n");
-        },
-        .trg = Lang.getByKey(_langs.trg) catch |err| {
-            @compileError("config.zig: Unknown \"" ++ _langs.trg ++
-                "\" language code: " ++ @errorName(err) ++ "\n");
-        },
-    };
+    const langs = config.default_langs;
+    comptime {
+        if (!lang.has(langs.src))
+            @compileError("config.zig: Unknown \"" ++ langs.src ++
+                "\" language code\n");
+        if (!lang.has(langs.trg))
+            @compileError("config.zig: Unknown \"" ++ langs.trg ++
+                "\" language code\n");
+    }
 
     return Self{
         .allocator = allocator,
@@ -81,8 +79,8 @@ pub fn run(self: *Self) !void {
         var request = try url.buildRequest(
             self.allocator,
             self.result_type,
-            self.langs.src.key,
-            self.langs.trg.key,
+            self.langs.src,
+            self.langs.trg,
             self.text,
         );
         defer self.allocator.free(request);
@@ -194,7 +192,7 @@ fn printDetail(self: *Self) !void {
     const src_lang = jsn.items[2];
     try rw.print(
         Color.green.regular("[ {s} ]") ++ ": {s}\n\n",
-        .{ src_lang.String, Lang.getLangStr(src_lang.String) },
+        .{ src_lang.String, lang.getByKey(src_lang.String) },
     );
 
     // Target text
@@ -221,7 +219,7 @@ fn printDetail(self: *Self) !void {
     // Target lang
     try rw.print(
         Color.green.regular("[ {s} ]") ++ ": {s}\n",
-        .{ self.langs.trg.key, Lang.getLangStr(self.langs.trg.key) },
+        .{ self.langs.trg, lang.getByKey(self.langs.trg) },
     );
 
     // Synonyms
@@ -365,6 +363,6 @@ fn printDetectLang(self: *Self) !void {
 
     try stdout.print(
         "{s} ({s})\n",
-        .{ jsn.String, Lang.getLangStr(jsn.String) },
+        .{ jsn.String, lang.getByKey(jsn.String) },
     );
 }
