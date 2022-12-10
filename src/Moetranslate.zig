@@ -89,6 +89,7 @@ pub fn run(self: *Self) !void {
             self.langs.trg.key,
             self.text,
         );
+        defer self.allocator.free(request);
 
         var stream = try http.sendRequest(
             self.allocator,
