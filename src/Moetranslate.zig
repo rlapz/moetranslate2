@@ -14,8 +14,6 @@ const util = @import("util.zig");
 
 const stdout = io.getStdOut().writer();
 const stderr = io.getStdErr().writer();
-var stdout_buffered = io.bufferedWriter(stdout);
-const bstdout = stdout_buffered.writer();
 
 const Self = @This();
 
@@ -80,10 +78,8 @@ pub fn run(self: *Self) !void {
     }
 
     var response = brk: {
-        const buffer_size = (config.text_max_length * 3) + 128;
         var request = try url.buildRequest(
             self.allocator,
-            buffer_size,
             self.result_type,
             self.langs.src.key,
             self.langs.trg.key,
@@ -99,6 +95,7 @@ pub fn run(self: *Self) !void {
         );
         defer stream.close();
 
+        const buffer_size = (config.text_max_length * 3) + 128;
         break :brk try http.getResponse(self.allocator, &stream, buffer_size);
     };
     defer self.allocator.free(response);
@@ -160,19 +157,22 @@ fn printDetail(self: *Self) !void {
     //     |
     // examples
 
-    defer stdout_buffered.flush() catch {};
+    var result = try std.ArrayList(u8).initCapacity(self.allocator, 4096);
+    defer result.deinit();
+    defer stdout.writeAll(result.items) catch {};
 
+    const rw = result.writer();
     const jsn = &self.json_tree.root.Array;
     const trg_txt = &jsn.items[0];
     const splls = &trg_txt.Array.items[trg_txt.Array.items.len - 1];
 
     // Source text
-    try bstdout.print("\"{s}\"\n", .{self.text});
+    try rw.print("\"{s}\"\n", .{self.text});
 
     // Correction
     const src_corr = jsn.items[7];
     if (src_corr == .Array and src_corr.Array.capacity > 0) {
-        try bstdout.print(
+        try rw.print(
             Color.yellow.regular("{s} \"") ++ "{s}" ++
                 Color.yellow.regular("\" ?") ++ "\n",
             .{ "> Did you mean:", src_corr.Array.items[1].String },
@@ -183,7 +183,7 @@ fn printDetail(self: *Self) !void {
     if (splls.Array.items.len > 3) {
         const src_spll = splls.Array.items[splls.Array.items.len - 1];
         if (src_spll == .String) {
-            try bstdout.print(
+            try rw.print(
                 "( " ++ Color.yellow.regular("{s}") ++ " )\n",
                 .{src_spll.String},
             );
@@ -192,7 +192,7 @@ fn printDetail(self: *Self) !void {
 
     // Source lang
     const src_lang = jsn.items[2];
-    try bstdout.print(
+    try rw.print(
         Color.green.regular("[ {s} ]") ++ ": {s}\n\n",
         .{ src_lang.String, Lang.getLangStr(src_lang.String) },
     );
@@ -201,17 +201,17 @@ fn printDetail(self: *Self) !void {
     const trg = jsn.items[0];
     for (trg.Array.items) |*v| {
         if (v.* == .Array and v.Array.items[0] == .String) {
-            try bstdout.print("{s}", .{v.Array.items[0].String});
+            try rw.print("{s}", .{v.Array.items[0].String});
         }
     }
 
-    try bstdout.writeByte('\n');
+    try rw.writeByte('\n');
 
     // Target spelling
     if (splls.Array.items.len > 2) {
         const trg_spll = splls.Array.items[2];
         if (trg_spll == .String) {
-            try bstdout.print(
+            try rw.print(
                 "( " ++ Color.yellow.regular("{s}") ++ " )\n",
                 .{trg_spll.String},
             );
@@ -219,7 +219,7 @@ fn printDetail(self: *Self) !void {
     }
 
     // Target lang
-    try bstdout.print(
+    try rw.print(
         Color.green.regular("[ {s} ]") ++ ": {s}\n",
         .{ self.langs.trg.key, Lang.getLangStr(self.langs.trg.key) },
     );
@@ -227,7 +227,7 @@ fn printDetail(self: *Self) !void {
     // Synonyms
     const synms = jsn.items[1];
     if (synms == .Array) {
-        try bstdout.writeAll("\n" ++ config.separator);
+        try rw.writeAll("\n" ++ config.separator);
 
         for (synms.Array.items) |*v| {
             // Verb, Nouns, etc
@@ -236,12 +236,12 @@ fn printDetail(self: *Self) !void {
                 // In some cases, there's no label at all.
                 // I think for the sake of beauty we should give a label,
                 // instead of printing an empty string.
-                try bstdout.writeAll(
+                try rw.writeAll(
                     comptime "\n" ++ Color.blue.bold("[ + ]"),
                 );
             } else {
                 const va = v.Array.items[0].String;
-                try bstdout.print(
+                try rw.print(
                     "\n" ++ Color.blue.bold("[ {c}{s} ]"),
                     .{ std.ascii.toUpper(va[0]), va[1..] },
                 );
@@ -254,7 +254,7 @@ fn printDetail(self: *Self) !void {
                 }
 
                 const vaa = vi.Array.items[0].String;
-                try bstdout.print(
+                try rw.print(
                     "\n" ++ Color.white.bold("{}. {c}{s}") ++
                         "\n   " ++ Color.yellow.regular("-> "),
                     .{ ii + 1, std.ascii.toUpper(vaa[0]), vaa[1..] },
@@ -263,32 +263,32 @@ fn printDetail(self: *Self) !void {
                 // Source Alt
                 var src_synn_alt = vi.Array.items[1].Array.items.len - 1;
                 for (vi.Array.items[1].Array.items) |*vii| {
-                    try bstdout.print("{s}", .{vii.String});
+                    try rw.print("{s}", .{vii.String});
 
                     if (src_synn_alt > 0) {
-                        try bstdout.writeAll(", ");
+                        try rw.writeAll(", ");
                         src_synn_alt -= 1;
                     }
                 }
             }
-            try bstdout.writeByte('\n');
+            try rw.writeByte('\n');
         }
     }
 
     // Definitions
     const defs = jsn.items[12];
     if (defs == .Array) {
-        try bstdout.writeAll("\n" ++ config.separator);
+        try rw.writeAll("\n" ++ config.separator);
 
         for (defs.Array.items) |*v| {
             if (v.Array.items[0].String.len == 0) {
                 // No label
-                try bstdout.writeAll(
+                try rw.writeAll(
                     comptime "\n" ++ Color.yellow.bold("[ + ]"),
                 );
             } else {
                 const va = v.Array.items[0].String;
-                try bstdout.print(
+                try rw.print(
                     "\n" ++ Color.yellow.bold("[ {c}{s} ]"),
                     .{ std.ascii.toUpper(va[0]), va[1..] },
                 );
@@ -300,7 +300,7 @@ fn printDetail(self: *Self) !void {
                 }
 
                 const vaa = vi.Array.items[0].String;
-                try bstdout.print(
+                try rw.print(
                     "\n" ++ Color.white.bold("{}. {c}{s}"),
                     .{ ii + 1, std.ascii.toUpper(vaa[0]), vaa[1..] },
                 );
@@ -311,7 +311,7 @@ fn printDetail(self: *Self) !void {
                         const ss = def_cre.Array.items[0];
 
                         if (ss == .Array and ss.Array.items[0] == .String) {
-                            try bstdout.print(
+                            try rw.print(
                                 Color.green.regular(" [ {s} ] ") ++ "",
                                 .{ss.Array.items[0].String},
                             );
@@ -322,7 +322,7 @@ fn printDetail(self: *Self) !void {
                 if (vi.Array.items.len > 2) {
                     const def_v = vi.Array.items[vi.Array.items.len - 1];
                     if (def_v == .String) {
-                        try bstdout.print(
+                        try rw.print(
                             "\n" ++ Color.yellow.regular("   ->") ++ " {c}{s}",
                             .{
                                 std.ascii.toUpper(def_v.String[0]),
@@ -332,14 +332,14 @@ fn printDetail(self: *Self) !void {
                     }
                 }
             }
-            try bstdout.writeByte('\n');
+            try rw.writeByte('\n');
         }
     }
 
     // Examples
     const exmpls = jsn.items[13];
     if (exmpls == .Array) {
-        try bstdout.writeAll("\n" ++ config.separator ++ "\n");
+        try rw.writeAll("\n" ++ config.separator ++ "\n");
 
         var tmp: [256]u8 = undefined;
         for (exmpls.Array.items) |*v| {
@@ -348,7 +348,7 @@ fn printDetail(self: *Self) !void {
                     break;
 
                 const vex = util.skipHtmlTags(&tmp, vi.Array.items[0].String);
-                try bstdout.print(
+                try rw.print(
                     "{}. " ++ Color.yellow.regular("{c}{s}") ++ "\n",
                     .{ ii + 1, std.ascii.toUpper(vex[0]), vex[1..] },
                 );

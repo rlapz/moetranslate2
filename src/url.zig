@@ -32,19 +32,15 @@ pub const UrlBuildType = enum {
     }
 };
 
-const String = std.ArrayList(u8);
-const StringWriter = String.Writer;
-
 // Caller owns returned memory
 pub fn buildRequest(
     allocator: std.mem.Allocator,
-    init_capacity: usize,
     url_type: UrlBuildType,
     src_lang: []const u8,
     trg_lang: []const u8,
     text: []const u8,
 ) ![]u8 {
-    var buffer = try String.initCapacity(allocator, init_capacity);
+    var buffer = try std.ArrayList(u8).initCapacity(allocator, 4096);
     defer buffer.deinit();
 
     const wr = buffer.writer();
@@ -58,8 +54,8 @@ pub fn buildRequest(
             .{ method, query, src_lang, trg_lang, trg_lang },
         ),
         .detect_lang => try wr.print(
-            "{s} {s}" ++ det_lang ++ "&sl={s}&q=",
-            .{ method, query, "auto" },
+            "{s} {s}" ++ det_lang ++ "&sl=auto&q=",
+            .{ method, query },
         ),
     }
 
