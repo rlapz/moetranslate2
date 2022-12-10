@@ -3,6 +3,7 @@ const std = @import("std");
 const config = @import("config.zig");
 
 pub const Color = enum(u32) {
+    red = 31,
     green = 32,
     yellow = 33,
     blue = 34,

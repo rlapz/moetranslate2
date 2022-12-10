@@ -19,8 +19,8 @@ const url = @import("url.zig");
 const stdout = std.io.getStdOut().writer();
 const stderr = std.io.getStdErr().writer();
 
-fn printErr(comptime c: Color, comptime _fmt: []const u8, args: anytype) void {
-    stderr.print(c.regular(_fmt) ++ "\n", args) catch {};
+fn printErr(comptime _fmt: []const u8, args: anytype) void {
+    stderr.print(Color.red.regular(_fmt) ++ "\n", args) catch {};
 }
 
 fn printOut(comptime c: Color, comptime _fmt: []const u8, args: anytype) void {
@@ -118,17 +118,17 @@ fn parseLang(langs: *Langs, str: []const u8) !void {
 
     const _src = mem.trim(u8, str[0..sep], " ");
     if (_src.len > 0) {
-        langs.src = Lang.getByKey(_src) catch |_err| {
-            printErr(.yellow, "Unknown \"{s}\" language code", .{_src});
-            return _err;
+        langs.src = Lang.getByKey(_src) catch {
+            printErr("Unknown \"{s}\" language code", .{_src});
+            return;
         };
     }
 
     const _trg = mem.trim(u8, str[sep + 1 ..], " ");
     if (_trg.len > 0) {
-        langs.trg = Lang.getByKey(_trg) catch |_err| {
-            printErr(.yellow, "Unknown \"{s}\" language code", .{_trg});
-            return _err;
+        langs.trg = Lang.getByKey(_trg) catch {
+            printErr("Unknown \"{s}\" language code", .{_trg});
+            return;
         };
     }
 }
@@ -223,7 +223,7 @@ fn inputIntr(allocator: mem.Allocator, moe: *Moetranslate) !void {
 
         moe.text = input;
         getIntrResult(moe, &is_running, &update_prompt) catch |err| {
-            printErr(.yellow, "Error: {s}", .{@errorName(err)});
+            printErr("Error: {s}", .{@errorName(err)});
         };
 
         stdout.writeAll(config.separator ++ "\n") catch {};
