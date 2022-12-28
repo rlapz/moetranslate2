@@ -41,10 +41,10 @@ fn printHelp() void {
         \\       -h    Show this help
         \\
         \\Examples:
-        \\   Brief Mode      : moetranslate2 -b en:id \"Hello\"
-        \\   Full/detail Mode: moetranslate2 -f id:en \"Halo\"
-        \\   Auto Lang       : moetranslate2 -f auto:en \"こんにちは\"
-        \\   Detect Lang     : moetranslate2 -d \"你好\"
+        \\   Brief Mode      : moetranslate2 -b en:id "Hello"
+        \\   Full/detail Mode: moetranslate2 -f id:en "Halo"
+        \\   Auto Lang       : moetranslate2 -f auto:en "こんにちは"
+        \\   Detect Lang     : moetranslate2 -d "你好"
         \\   Interactive     : moetranslate2 -i
         \\                     moetranslate2 -i -f auto:en
         \\
